@@ -1,0 +1,31 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# environment and secrets
+.env
+.env.*
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# testing
+/coverage
+
+# production
+/build
+
+# editor and operating system files
+.DS_Store
+.vscode/
+.idea/
+
+# misc
+.cache
+.eslintcache
