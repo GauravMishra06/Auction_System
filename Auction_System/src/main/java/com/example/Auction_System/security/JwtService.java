@@ -26,9 +26,16 @@ public class JwtService {
 
     private SecretKey key;
 
+    private static final int MIN_SECRET_BYTES = 32;
+
     @PostConstruct
     public void init() {
-        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        byte[] secretBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        if (secretBytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                "JWT secret must be at least 32 bytes (256 bits) for HS256, but was " + secretBytes.length + " bytes");
+        }
+        this.key = Keys.hmacShaKeyFor(secretBytes);
     }
 
     public String generateToken(UserDetails userDetails, Long userId, String role) {
