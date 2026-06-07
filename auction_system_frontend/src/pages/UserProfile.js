@@ -1,28 +1,61 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useAuth, API_BASE_URL } from '../auth/auth';
+
+const API = API_BASE_URL;
 
 const UserProfile = () => {
+  const { auth, getAuthorizedHeaders } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const headers = await getAuthorizedHeaders();
+        const res = await axios.get(`${API}/api/users/${auth.userId}`, { headers });
+        setProfile(res.data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Unable to load profile.');
+      }
+    };
+
+    if (auth?.userId) {
+      loadProfile();
+    }
+  }, [auth?.userId, getAuthorizedHeaders]);
+
+
   return (
     <div style={styles.workspaceContainer}>
-      <div style={styles.breadcrumbBar}>Home / Operational Dashboard</div>
-      
+      <div style={styles.breadcrumbBar}>Home / Profile</div>
+
       <div style={styles.formCardWrapper}>
         <h3 style={styles.cardHeaderTitle}>Active Profile Parameters</h3>
-        <p style={styles.instructionText}>Review your current security clearances and active bidding statistics below.</p>
-        
-        <div style={styles.statsGrid}>
-          <div style={styles.statBox}>
-            <span style={styles.statLabel}>System Role</span>
-            <span style={styles.statValue}>ROLE_BIDDER</span>
+        <p style={styles.instructionText}>Review your access role and account details.</p>
+
+        {error && <div style={styles.error}>{error}</div>}
+
+        {profile && (
+          <div style={styles.statsGrid}>
+            <div style={styles.statBox}>
+              <span style={styles.statLabel}>User ID</span>
+              <span style={styles.statValue}>{profile.id}</span>
+            </div>
+            <div style={styles.statBox}>
+              <span style={styles.statLabel}>Username</span>
+              <span style={styles.statValue}>{profile.username}</span>
+            </div>
+            <div style={styles.statBox}>
+              <span style={styles.statLabel}>Email</span>
+              <span style={styles.statValue}>{profile.email}</span>
+            </div>
+            <div style={styles.statBox}>
+              <span style={styles.statLabel}>System Role</span>
+              <span style={styles.statValue}>{profile.role}</span>
+            </div>
           </div>
-          <div style={styles.statBox}>
-            <span style={styles.statLabel}>Active Bids</span>
-            <span style={styles.statValue}>0</span>
-          </div>
-          <div style={styles.statBox}>
-            <span style={styles.statLabel}>Assets Won</span>
-            <span style={styles.statValue}>0</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -34,10 +67,11 @@ const styles = {
   formCardWrapper: { backgroundColor: '#ffffff', border: '1px solid #e3e6f0', borderRadius: '6px', padding: '30px', maxWidth: '800px', margin: '0 auto', boxShadow: '0 0.15rem 1.75rem 0 rgba(58, 59, 120, 0.05)' },
   cardHeaderTitle: { margin: '0 0 10px 0', borderBottom: '1px solid #e3e6f0', paddingBottom: '10px', color: '#4e73df', fontSize: '1.25rem', fontWeight: '700' },
   instructionText: { color: '#6c757d', fontSize: '0.85rem', marginBottom: '25px', lineHeight: '1.5' },
+  error: { background: '#f8d7da', color: '#721c24', padding: 10, borderRadius: 6, border: '1px solid #f5c6cb' },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '20px' },
   statBox: { padding: '20px', backgroundColor: '#f8f9fa', borderLeft: '4px solid #4e73df', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 0.1rem 0.5rem 0 rgba(58, 59, 120, 0.05)' },
   statLabel: { fontSize: '0.8rem', fontWeight: '700', color: '#4e73df', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  statValue: { fontSize: '1.5rem', fontWeight: 'bold', color: '#5a5c69' }
+  statValue: { fontSize: '1.1rem', fontWeight: 'bold', color: '#5a5c69' }
 };
 
 export default UserProfile;

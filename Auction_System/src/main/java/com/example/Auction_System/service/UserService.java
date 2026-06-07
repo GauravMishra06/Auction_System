@@ -1,9 +1,11 @@
 package com.example.Auction_System.service;
 
 import com.example.Auction_System.dto.UserDTO;
+import com.example.Auction_System.exception.BusinessRuleException;
+import com.example.Auction_System.exception.ResourceNotFoundException;
 import com.example.Auction_System.models.User;
 import com.example.Auction_System.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -12,25 +14,34 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
-    @Autowired // Auto-injects our UserRepository bean dependency
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public User registerUser(User user) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public UserDTO registerUser(User user) {
         // Enforce business rules before updating the database
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new RuntimeException("Error: Username is already taken!");
+            throw new BusinessRuleException("Username is already taken.");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("Error: Email is already in use!");
+            throw new BusinessRuleException("Email is already in use.");
         }
-        return userRepository.save(user);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User saved = userRepository.save(user);
+        return convertToDTO(saved);
     }
 
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+        return convertToDTO(user);
+    }
 
-        // Map entity fields directly over to a clean user view container object
+    private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());

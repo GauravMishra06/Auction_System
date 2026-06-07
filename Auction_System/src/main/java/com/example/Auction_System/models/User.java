@@ -23,20 +23,24 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class User {
     @Id // Designates this field as the unique primary key in SQL database
     @GeneratedValue(strategy = GenerationType.IDENTITY)// Database handles auto-incrementing IDs (1, 2, 3...)
     private Long id;
+
     @Column(unique = true, nullable = false)// Configures SQL constraints: Cannot be blank, cannot be a duplicate
-    private String Username;
+    private String username;
+
     @Column(unique = true, nullable = false)
     private String email;
+
     @Column(nullable = false)
     private String password;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
     @Column(name = "created_at", updatable = false) // Map field name using snake_case conventions inside SQL database
     private LocalDateTime createdAt;
 
@@ -57,4 +61,3 @@ public class User {
         this.createdAt = LocalDateTime.now(); // Saves us from passing the server timestamp manually on creation
     }
 }
-

@@ -4,28 +4,38 @@ import com.example.Auction_System.models.Auction;
 import com.example.Auction_System.models.enums.AuctionStatus;
 import com.example.Auction_System.repository.AuctionRepository;
 import com.example.Auction_System.service.OrderService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.Auction_System.service.PasswordResetService;
+import com.example.Auction_System.service.RefreshTokenService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Component // Registers this utility tool class as a generic Spring-managed component bean
+@Component
 public class AuctionScheduler {
 
-    @Autowired
-    private AuctionRepository auctionRepository;
+    private static final Logger log = LoggerFactory.getLogger(AuctionScheduler.class);
 
-    @Autowired
-    private OrderService orderService;
+    private final AuctionRepository auctionRepository;
+    private final OrderService orderService;
+    private final RefreshTokenService refreshTokenService;
+    private final PasswordResetService passwordResetService;
+
+    public AuctionScheduler(AuctionRepository auctionRepository, OrderService orderService,
+                            RefreshTokenService refreshTokenService, PasswordResetService passwordResetService) {
+        this.auctionRepository = auctionRepository;
+        this.orderService = orderService;
+        this.refreshTokenService = refreshTokenService;
+        this.passwordResetService = passwordResetService;
+    }
 
     /**
-     * Automated task cycle background worker execution thread.
-     * fixedRate = 60000 tells Spring to run this method every 60,000 milliseconds (1 minute).
+     * Checks and closes expired auctions every 60 seconds.
      */
     @Scheduled(fixedRate = 60000)
     public void checkAndCloseExpiredAuctions() {
-        // Query database for listings whose timers have run out but are still marked ACTIVE
         List<Auction> expiredAuctions = auctionRepository.findByStatusAndEndTimeBefore(
                 AuctionStatus.ACTIVE,
                 LocalDateTime.now()
@@ -33,12 +43,31 @@ public class AuctionScheduler {
 
         for (Auction auction : expiredAuctions) {
             try {
-                // Pass control to the service layer to update status and calculate the winner
                 orderService.createOrderForCompletedAuction(auction.getId());
             } catch (Exception e) {
-                // Catches errors to ensure a single corrupted record won't halt the rest of the scheduler cycle
-                System.err.println("Scheduler Error closing auction entry: " + auction.getId() + " -> " + e.getMessage());
+                log.error("Error closing auction #{}: {}", auction.getId(), e.getMessage());
             }
+        }
+
+        if (!expiredAuctions.isEmpty()) {
+            log.info("Closed {} expired auction(s)", expiredAuctions.size());
+        }
+    }
+
+    /**
+     * Purges expired/used refresh tokens and password reset tokens every hour
+     * to prevent unbounded database table growth.
+     */
+    @Scheduled(fixedRate = 3600000)
+    public void purgeExpiredTokens() {
+        try {
+            int refreshPurged = refreshTokenService.purgeExpiredTokens();
+            int resetPurged = passwordResetService.purgeExpiredTokens();
+            if (refreshPurged > 0 || resetPurged > 0) {
+                log.info("Token cleanup: purged {} refresh tokens, {} password reset tokens", refreshPurged, resetPurged);
+            }
+        } catch (Exception e) {
+            log.error("Error during token cleanup: {}", e.getMessage());
         }
     }
 }

@@ -20,6 +20,13 @@ public class Auction {
     private Long id;
 
     /**
+     * Optimistic locking version field. Prevents concurrent bid race conditions
+     * by causing an OptimisticLockException if two transactions modify the same row simultaneously.
+     */
+    @Version
+    private Long version;
+
+    /**
      * Always specify BigDecimal for currency tracking computations.
      * Using double or float will introduce rounding inaccuracies due to binary calculations.
      */

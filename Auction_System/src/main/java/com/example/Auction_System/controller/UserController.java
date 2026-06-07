@@ -3,24 +3,29 @@ package com.example.Auction_System.controller;
 import com.example.Auction_System.dto.UserDTO;
 import com.example.Auction_System.models.User;
 import com.example.Auction_System.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-@RestController // Tells Spring to expose this class as REST endpoints returning raw JSON payload structures
-@RequestMapping("/api/users") // Base path routing mapping pattern prefix
-@CrossOrigin(origins = "*") // CORS configuration: Permits communication connections from React app ports
+@RestController
+@RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @PostMapping("/register") // Intercepts HTTP POST transactions targeting path "/api/users/register"
-    public ResponseEntity<User> register(@RequestBody User user) { // @RequestBody unmarshalls incoming JSON strings into Java models
-        return ResponseEntity.ok(userService.registerUser(user));
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
-    @GetMapping("/{id}") // Path variable token matching notation parameter strategy: "/api/users/5"
+    @PostMapping("/register")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> register(@RequestBody User user) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerUser(user));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> getUserProfile(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }

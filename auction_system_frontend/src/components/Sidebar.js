@@ -1,29 +1,65 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../auth/auth';
 
 const Sidebar = () => {
+  const { auth } = useAuth();
+
   return (
     <div style={styles.sidebarWrapper}>
       <div style={styles.sidebarHeader}>Navigation Core</div>
       <div style={styles.linkList}>
-        {/* NavLink automatically injects design changes when its path becomes active */}
         <NavLink to="/" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
           🗂️ Live Auction Gallery
         </NavLink>
-        <NavLink to="/create-auction" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
-          ➕ Publish New Listing
-        </NavLink>
-        <NavLink to="/profile" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
-          👤 User Dashboard Log
-        </NavLink>
+        {!auth?.token && (
+          <>
+            <NavLink to="/signin" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
+              🔐 Sign In
+            </NavLink>
+            <NavLink to="/forgot-password" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
+              🔑 Forgot Password
+            </NavLink>
+          </>
+        )}
         <NavLink to="/register" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
-          🔑 Enroll New Participant
+          👥 Sign Up
         </NavLink>
+        {auth?.role === 'ROLE_AUCTIONEER' && (
+          <>
+            <NavLink to="/dashboard/auctioneer" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
+              📊 Auctioneer Dashboard
+            </NavLink>
+            <NavLink to="/create-auction" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
+              ➕ Publish New Listing
+            </NavLink>
+          </>
+        )}
+        {auth?.role === 'ROLE_BIDDER' && (
+          <NavLink to="/dashboard/bidder" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
+            📈 Bidder Dashboard
+          </NavLink>
+        )}
+        {auth?.role === 'ROLE_ADMIN' && (
+          <>
+            <NavLink to="/dashboard/admin" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
+              🛠️ Admin Dashboard
+            </NavLink>
+            <NavLink to="/create-auction" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
+              ➕ Publish New Listing
+            </NavLink>
+          </>
+        )}
+        {auth?.token && (
+          <NavLink to="/profile" style={({ isActive }) => isActive ? styles.activeLinkItem : styles.baseLinkItem}>
+            👤 User Profile
+          </NavLink>
+        )}
       </div>
       
       <div style={styles.sidebarFooter}>
         <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>Secure Environment</div>
-        <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#ffc107' }}>v1.09.12 Active</div>
+        <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#ffc107' }}>v2.0.0 Active</div>
       </div>
     </div>
   );

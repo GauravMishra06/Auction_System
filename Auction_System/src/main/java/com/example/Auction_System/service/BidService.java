@@ -2,6 +2,9 @@ package com.example.Auction_System.service;
 
 import com.example.Auction_System.dto.BidRequestDTO;
 import com.example.Auction_System.dto.BidResponseDTO;
+import com.example.Auction_System.exception.AuthorizationException;
+import com.example.Auction_System.exception.BusinessRuleException;
+import com.example.Auction_System.exception.ResourceNotFoundException;
 import com.example.Auction_System.models.Auction;
 import com.example.Auction_System.models.Bid;
 import com.example.Auction_System.models.User;
@@ -9,7 +12,9 @@ import com.example.Auction_System.models.enums.AuctionStatus;
 import com.example.Auction_System.repository.AuctionRepository;
 import com.example.Auction_System.repository.BidRepository;
 import com.example.Auction_System.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -18,32 +23,48 @@ import java.util.stream.Collectors;
 @Service
 public class BidService {
 
-    @Autowired
-    private BidRepository bidRepository;
+    private static final Logger log = LoggerFactory.getLogger(BidService.class);
 
-    @Autowired
-    private AuctionRepository auctionRepository;
+    private final BidRepository bidRepository;
+    private final AuctionRepository auctionRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    public BidService(BidRepository bidRepository, AuctionRepository auctionRepository,
+                      UserRepository userRepository) {
+        this.bidRepository = bidRepository;
+        this.auctionRepository = auctionRepository;
+        this.userRepository = userRepository;
+    }
 
     @Transactional
     public BidResponseDTO placeBid(BidRequestDTO request) {
         Auction auction = auctionRepository.findById(request.getAuctionId())
-                .orElseThrow(() -> new RuntimeException("Target auction event entry lookup missing error"));
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + request.getAuctionId()));
 
         // Validation Rule: Reject entries if timeline is closed or deactivated
         if (auction.getStatus() != AuctionStatus.ACTIVE) {
-            throw new RuntimeException("Validation Error: This auction timeline has completed or suspended processing!");
+            throw new BusinessRuleException("This auction is no longer active.");
         }
 
-        // Validation Rule: Incoming price check. Compare big decimal entries. Reject bids that are too low.
+        // Validation Rule: Check if auction end time has passed
+        if (auction.getEndTime().isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessRuleException("This auction has expired.");
+        }
+
+        // Validation Rule: Incoming price check. Reject bids that are too low.
         if (request.getBidAmount().compareTo(auction.getCurrentHighestBid()) <= 0) {
-            throw new RuntimeException("Validation Error: Proposed bid amount must be strictly greater than current highest bid!");
+            throw new BusinessRuleException("Bid amount must be greater than the current highest bid of $" + auction.getCurrentHighestBid());
         }
 
-        User bidder = userRepository.findById(request.getBidderId())
-                .orElseThrow(() -> new RuntimeException("Profile transaction participant identity search error"));
+        // Extract bidder identity from JWT token — never trust client-provided IDs
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User bidder = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + currentUsername));
+
+        // Validation Rule: Seller cannot bid on their own auction (fraud prevention)
+        if (auction.getSeller().getId().equals(bidder.getId())) {
+            throw new AuthorizationException("You cannot bid on your own auction.");
+        }
 
         Bid bid = new Bid();
         bid.setAuction(auction);
@@ -52,14 +73,28 @@ public class BidService {
         Bid savedBid = bidRepository.save(bid);
 
         // Synchronize state: Update the highest bid pointer to lock in the new price
+        // Optimistic locking via @Version will throw if another bid was placed concurrently
         auction.setCurrentHighestBid(request.getBidAmount());
         auctionRepository.save(auction);
 
+        log.info("Bid #{} placed by '{}' on auction #{} for ${}", savedBid.getId(), currentUsername, auction.getId(), request.getBidAmount());
         return convertToBidDTO(savedBid);
     }
 
     public List<BidResponseDTO> getBidHistory(Long auctionId) {
         return bidRepository.findByAuctionIdOrderByBidAmountDesc(auctionId).stream()
+                .map(this::convertToBidDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns all bids placed by the currently authenticated user.
+     */
+    public List<BidResponseDTO> getMyBids() {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User bidder = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + currentUsername));
+        return bidRepository.findByBidderId(bidder.getId()).stream()
                 .map(this::convertToBidDTO)
                 .collect(Collectors.toList());
     }

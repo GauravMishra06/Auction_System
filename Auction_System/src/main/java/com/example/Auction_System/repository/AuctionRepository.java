@@ -14,7 +14,11 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     /**
      * Used by the background scheduler to fetch auctions whose end time has passed
      * but are still marked as active.
-     * SQL: "SELECT * FROM auctions WHERE status = ? AND end_time < ?"
      */
     List<Auction> findByStatusAndEndTimeBefore(AuctionStatus status, LocalDateTime now);
+
+    /**
+     * Finds all auctions created by a specific seller.
+     */
+    List<Auction> findBySellerId(Long sellerId);
 }

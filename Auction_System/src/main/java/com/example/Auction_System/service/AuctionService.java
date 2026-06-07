@@ -2,27 +2,38 @@ package com.example.Auction_System.service;
 
 import com.example.Auction_System.dto.AuctionRequestDTO;
 import com.example.Auction_System.dto.AuctionResponseDTO;
+import com.example.Auction_System.exception.AuthorizationException;
+import com.example.Auction_System.exception.BusinessRuleException;
+import com.example.Auction_System.exception.ResourceNotFoundException;
 import com.example.Auction_System.models.Auction;
 import com.example.Auction_System.models.Item;
 import com.example.Auction_System.models.User;
 import com.example.Auction_System.models.enums.AuctionStatus;
 import com.example.Auction_System.repository.AuctionRepository;
 import com.example.Auction_System.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
 public class AuctionService {
 
-    @Autowired
-    private AuctionRepository auctionRepository;
+    private static final Logger log = LoggerFactory.getLogger(AuctionService.class);
 
-    @Autowired
-    private UserRepository userRepository;
+    private final AuctionRepository auctionRepository;
+    private final UserRepository userRepository;
+
+    public AuctionService(AuctionRepository auctionRepository, UserRepository userRepository) {
+        this.auctionRepository = auctionRepository;
+        this.userRepository = userRepository;
+    }
 
     /**
      * @Transactional protects transaction integrity. If saving the auction record errors out midway,
@@ -30,8 +41,10 @@ public class AuctionService {
      */
     @Transactional
     public AuctionResponseDTO createAuction(AuctionRequestDTO request) {
-        User seller = userRepository.findById(request.getSellerId())
-                .orElseThrow(() -> new RuntimeException("Seller profile entity lookup match failed"));
+        // Extract seller identity from JWT token — never trust client-provided IDs
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User seller = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller not found: " + currentUsername));
 
         // Instantiate database model entity and assign text field context data points
         Item item = new Item();
@@ -51,6 +64,7 @@ public class AuctionService {
         auction.setStatus(AuctionStatus.ACTIVE);
 
         Auction savedAuction = auctionRepository.save(auction);
+        log.info("Auction #{} created by user '{}'", savedAuction.getId(), currentUsername);
         return convertToResponseDTO(savedAuction);
     }
 
@@ -61,10 +75,58 @@ public class AuctionService {
                 .collect(Collectors.toList());
     }
 
+    public List<AuctionResponseDTO> searchActiveAuctions(String auctionId, String auctionTitle, String sortBy) {
+        String trimmedAuctionId = auctionId == null ? "" : auctionId.trim();
+        String trimmedAuctionTitle = auctionTitle == null ? "" : auctionTitle.trim().toLowerCase(Locale.ROOT);
+        String trimmedSortBy = sortBy == null ? "publishDate" : sortBy.trim();
+
+        return getActiveAuctions().stream()
+                .filter(dto -> trimmedAuctionId.isEmpty() || dto.getAuctionId().toString().contains(trimmedAuctionId))
+                .filter(dto -> trimmedAuctionTitle.isEmpty() || (dto.getItemName() != null && dto.getItemName().toLowerCase(Locale.ROOT).contains(trimmedAuctionTitle)))
+                .sorted(createAuctionComparator(trimmedSortBy))
+                .collect(Collectors.toList());
+    }
+
     public AuctionResponseDTO getAuctionById(Long id) {
         Auction auction = auctionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Auction data node query missing match error"));
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + id));
         return convertToResponseDTO(auction);
+    }
+
+    @Transactional
+    public AuctionResponseDTO cancelAuction(Long id) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        Auction auction = auctionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + id));
+
+        // Only the seller or an admin can cancel
+        boolean isOwner = auction.getSeller().getUsername().equals(currentUsername);
+        boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isOwner && !isAdmin) {
+            throw new AuthorizationException("You do not have permission to cancel this auction.");
+        }
+
+        if (auction.getStatus() != AuctionStatus.ACTIVE) {
+            throw new BusinessRuleException("Only active auctions can be cancelled.");
+        }
+
+        auction.setStatus(AuctionStatus.CANCELLED);
+        Auction saved = auctionRepository.save(auction);
+        log.info("Auction #{} cancelled by user '{}'", id, currentUsername);
+        return convertToResponseDTO(saved);
+    }
+
+    /**
+     * Returns all auctions created by a specific seller (by username).
+     */
+    public List<AuctionResponseDTO> getAuctionsBySeller(String username) {
+        User seller = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller not found: " + username));
+        return auctionRepository.findBySellerId(seller.getId()).stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -84,5 +146,12 @@ public class AuctionService {
         dto.setStatus(auction.getStatus().name());
         dto.setSellerUsername(auction.getSeller().getUsername());
         return dto;
+    }
+
+    private Comparator<AuctionResponseDTO> createAuctionComparator(String sortBy) {
+        if ("auctionId".equalsIgnoreCase(sortBy)) {
+            return Comparator.comparing(AuctionResponseDTO::getAuctionId);
+        }
+        return Comparator.comparing(AuctionResponseDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed();
     }
 }

@@ -1,6 +1,8 @@
 package com.example.Auction_System.service;
 
 import com.example.Auction_System.dto.OrderResponseDTO;
+import com.example.Auction_System.exception.BusinessRuleException;
+import com.example.Auction_System.exception.ResourceNotFoundException;
 import com.example.Auction_System.models.Auction;
 import com.example.Auction_System.models.Bid;
 import com.example.Auction_System.models.Order;
@@ -9,7 +11,8 @@ import com.example.Auction_System.models.enums.OrderStatus;
 import com.example.Auction_System.repository.AuctionRepository;
 import com.example.Auction_System.repository.BidRepository;
 import com.example.Auction_System.repository.OrderRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -18,25 +21,29 @@ import java.util.stream.Collectors;
 @Service
 public class OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
-    @Autowired
-    private AuctionRepository auctionRepository;
+    private final OrderRepository orderRepository;
+    private final AuctionRepository auctionRepository;
+    private final BidRepository bidRepository;
 
-    @Autowired
-    private BidRepository bidRepository;
+    public OrderService(OrderRepository orderRepository, AuctionRepository auctionRepository,
+                        BidRepository bidRepository) {
+        this.orderRepository = orderRepository;
+        this.auctionRepository = auctionRepository;
+        this.bidRepository = bidRepository;
+    }
 
     /**
-     * core fulfillment logic to process the closeout of an active auction window.
+     * Core fulfillment logic to process the closeout of an active auction window.
      */
     @Transactional
     public OrderResponseDTO createOrderForCompletedAuction(Long auctionId) {
         Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new RuntimeException("Fulfillment error: Target auction record extraction error"));
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + auctionId));
 
         if (auction.getStatus() != AuctionStatus.ACTIVE) {
-            throw new RuntimeException("Validation Error: Cannot execute closure processes on an inactive auction instance");
+            throw new BusinessRuleException("Cannot close an auction that is not active.");
         }
 
         // Change status to prevent users from trying to place final bids during calculation
@@ -54,12 +61,14 @@ public class OrderService {
             order.setWinner(null);
             order.setFinalPrice(auction.getStartPrice());
             order.setPaymentStatus(OrderStatus.FAILED);
+            log.info("Auction #{} closed with no bids", auctionId);
         } else {
-            // Isolate index element position 0 (Highest bid extracted from repository ordering parameter configurations)
+            // Highest bid is at index 0 (ordered by bid_amount DESC)
             Bid winningBid = bids.get(0);
             order.setWinner(winningBid.getBidder());
             order.setFinalPrice(winningBid.getBidAmount());
-            order.setPaymentStatus(OrderStatus.PENDING); // Order logged successfully, waiting for checkout completion
+            order.setPaymentStatus(OrderStatus.PENDING);
+            log.info("Auction #{} won by '{}' for ${}", auctionId, winningBid.getBidder().getUsername(), winningBid.getBidAmount());
         }
 
         Order savedOrder = orderRepository.save(order);
@@ -68,29 +77,26 @@ public class OrderService {
 
     /**
      * Lookup an invoice record by its primary key ID.
-     * Maps directly to GET /api/orders/{id}
      */
     @Transactional(readOnly = true)
     public OrderResponseDTO getOrderById(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order fetch failure: Order reference entry not found for ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
         return convertToOrderDTO(order);
     }
 
     /**
-     * Find a settled invoice statement linked directly to a target auction tracker.
-     * Maps directly to GET /api/orders/auction/{auctionId}
+     * Find a settled invoice linked directly to a target auction.
      */
     @Transactional(readOnly = true)
     public OrderResponseDTO getOrderByAuctionId(Long auctionId) {
         Order order = orderRepository.findByAuctionId(auctionId)
-                .orElseThrow(() -> new RuntimeException("Order fetch failure: No historical settlement found for Auction ID: " + auctionId));
+                .orElseThrow(() -> new ResourceNotFoundException("No order found for Auction ID: " + auctionId));
         return convertToOrderDTO(order);
     }
 
     /**
-     * Compiles all billing receipts generated under a specific user account's handle.
-     * Maps directly to GET /api/orders/winner/{username}
+     * Compiles all orders won by a specific user.
      */
     @Transactional(readOnly = true)
     public List<OrderResponseDTO> getOrdersByWinnerUsername(String username) {
@@ -101,7 +107,7 @@ public class OrderService {
     }
 
     /**
-     * Shared private conversion utility mapping Order entity rows cleanly to outbound DTO objects.
+     * Shared private conversion utility mapping Order entity to outbound DTO.
      */
     private OrderResponseDTO convertToOrderDTO(Order order) {
         OrderResponseDTO dto = new OrderResponseDTO();
@@ -109,7 +115,7 @@ public class OrderService {
         dto.setAuctionId(order.getAuction().getId());
         dto.setItemName(order.getAuction().getItem().getName());
         dto.setFinalPrice(order.getFinalPrice());
-        dto.setWinnerUsername(order.getWinner() != null ? order.getWinner().getUsername() : "NO PARTICIPANT BIDS");
+        dto.setWinnerUsername(order.getWinner() != null ? order.getWinner().getUsername() : "NO BIDS");
         dto.setPaymentStatus(order.getPaymentStatus().name());
         dto.setCreatedAt(order.getCreatedAt());
         return dto;

@@ -7,8 +7,7 @@ const ActiveAuctions = () => {
   const [searchParams, setSearchParams] = useState({
     auctionId: '',
     auctionTitle: '',
-    sortBy: 'publishDate',
-    captchaInput: ''
+    sortBy: 'publishDate'
   });
 
   // 2. Data Management and UI Logic States
@@ -16,9 +15,6 @@ const ActiveAuctions = () => {
   const [filteredAuctions, setFilteredAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Static Mock Captcha content to mimic the government portal security validation layer
-  const MOCK_CAPTCHA_TEXT = "bJcpAZ";
 
   // Initial data synchronization hook on component mount
   useEffect(() => {
@@ -41,45 +37,28 @@ const ActiveAuctions = () => {
   };
 
   // Process operational execution upon clicking 'Search'
-  const handleSearchExecute = (e) => {
+  const handleSearchExecute = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
-    // Security Gate Verification: Validate captcha matching rules
-    if (searchParams.captchaInput !== MOCK_CAPTCHA_TEXT) {
-      setErrorMessage('Security Assertion Failure: Provided Captcha text does not match the active image node.');
-      return;
+    try {
+      const response = await axios.get('http://localhost:8080/api/auctions/search', {
+        params: {
+          auctionId: searchParams.auctionId,
+          auctionTitle: searchParams.auctionTitle,
+          sortBy: searchParams.sortBy
+        }
+      });
+      setFilteredAuctions(response.data);
+    } catch (error) {
+      console.error('Search request failed:', error);
+      setErrorMessage('Search failed. Please ensure the backend and database are running.');
     }
-
-    // Filter local memory arrays based on active text search parameters
-    let processedResults = [...auctions];
-
-    if (searchParams.auctionId.trim() !== '') {
-      processedResults = processedResults.filter(item => 
-        item.auctionId.toString().includes(searchParams.auctionId.trim())
-      );
-    }
-
-    if (searchParams.auctionTitle.trim() !== '') {
-      processedResults = processedResults.filter(item => 
-        item.itemName.toLowerCase().includes(searchParams.auctionTitle.toLowerCase().trim())
-      );
-    }
-
-    // Process sorting logic variations based on radio selection vectors
-    if (searchParams.sortBy === 'auctionId') {
-      processedResults.sort((a, b) => a.auctionId - b.auctionId);
-    } else {
-      // Sort by timeline configuration metrics
-      processedResults.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-    }
-
-    setFilteredAuctions(processedResults);
   };
 
   // Flush out search forms back to the absolute base state context
   const handleFormReset = () => {
-    setSearchParams({ auctionId: '', auctionTitle: '', sortBy: 'publishDate', captchaInput: '' });
+    setSearchParams({ auctionId: '', auctionTitle: '', sortBy: 'publishDate' });
     setFilteredAuctions(auctions);
     setErrorMessage('');
   };
@@ -118,20 +97,8 @@ const ActiveAuctions = () => {
             </label>
           </div>
 
-          {/* Captcha Security Column Node Box Layout */}
-          <div style={styles.captchaControlRow}>
-            <div style={styles.captchaDisplayBox}>
-              <span style={styles.scrambledCaptchaText}>{MOCK_CAPTCHA_TEXT}</span>
-              <span style={{ fontSize: '0.8rem', color: '#0056b3', cursor: 'pointer', textDecoration: 'underline' }}>Refresh</span>
-            </div>
-            <div style={styles.fieldGroup}>
-              <label style={styles.inputLabelElement}>Enter Captcha</label>
-              <input type="text" name="captchaInput" value={searchParams.captchaInput} onChange={handleInputChange} required style={{ ...styles.textInputField, width: '240px' }} />
-            </div>
-          </div>
-
           {errorMessage && <div style={styles.dangerAlertBanner}>{errorMessage}</div>}
-          <div style={styles.infoInstructionBar}>Provide valid Captcha constraints and execute query parameters to look up specific database listings.</div>
+          <div style={styles.infoInstructionBar}>Use search and sorting filters to find active auctions.</div>
 
           {/* Action Trigger Buttons Section */}
           <div style={styles.buttonActionConsoleBar}>
@@ -168,9 +135,6 @@ const styles = {
   textInputField: { padding: '10px 14px', borderRadius: '4px', border: '1px solid #d1d3e2', fontSize: '0.95rem', transition: 'border-color 0.15s ease-in-out', outline: 'none' },
   sortOptionsWrapper: { marginBottom: '20px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '15px', fontSize: '0.9rem' },
   radioLabelOption: { marginRight: '20px', color: '#495057', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' },
-  captchaControlRow: { display: 'flex', alignItems: 'center', gap: '20px', backgroundColor: '#f1f3f9', padding: '15px', borderRadius: '4px', marginBottom: '15px', flexWrap: 'wrap' },
-  captchaDisplayBox: { padding: '10px 15px', backgroundColor: '#ffffff', border: '1px dashed #4e73df', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '15px' },
-  scrambledCaptchaText: { fontStyle: 'italic', letterSpacing: '4px', fontWeight: 'bold', fontSize: '1.4rem', color: '#2e59d9', fontFamily: 'Courier New, monospace' },
   infoInstructionBar: { padding: '8px 12px', backgroundColor: '#fff3cd', color: '#856404', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid #ffeeba', marginBottom: '20px' },
   dangerAlertBanner: { padding: '10px 12px', backgroundColor: '#f8d7da', color: '#721c24', fontSize: '0.9rem', borderRadius: '4px', border: '1px solid #f5c6cb', marginBottom: '20px', fontWeight: '500' },
   buttonActionConsoleBar: { display: 'flex', justifyContent: 'flex-end', gap: '15px', borderTop: '1px solid #e3e6f0', paddingTop: '15px' },
