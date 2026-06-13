@@ -81,6 +81,7 @@ public class BidService {
         return convertToBidDTO(savedBid);
     }
 
+    @Transactional(readOnly = true)
     public List<BidResponseDTO> getBidHistory(Long auctionId) {
         return bidRepository.findByAuctionIdOrderByBidAmountDesc(auctionId).stream()
                 .map(this::convertToBidDTO)
@@ -90,6 +91,7 @@ public class BidService {
     /**
      * Returns all bids placed by the currently authenticated user.
      */
+    @Transactional(readOnly = true)
     public List<BidResponseDTO> getMyBids() {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User bidder = userRepository.findByUsername(currentUsername)

@@ -68,6 +68,7 @@ public class AuctionService {
         return convertToResponseDTO(savedAuction);
     }
 
+    @Transactional(readOnly = true)
     public List<AuctionResponseDTO> getActiveAuctions() {
         // Find by status and transform entity arrays into response payload vectors
         return auctionRepository.findByStatus(AuctionStatus.ACTIVE).stream()
@@ -75,18 +76,50 @@ public class AuctionService {
                 .collect(Collectors.toList());
     }
 
-    public List<AuctionResponseDTO> searchActiveAuctions(String auctionId, String auctionTitle, String sortBy) {
+    @Transactional(readOnly = true)
+    public List<AuctionResponseDTO> getCompletedAuctions() {
+        return auctionRepository.findByStatus(AuctionStatus.COMPLETED).stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<AuctionResponseDTO> searchActiveAuctions(String auctionId, String auctionTitle, String startDate, String endDate, String sortBy) {
         String trimmedAuctionId = auctionId == null ? "" : auctionId.trim();
         String trimmedAuctionTitle = auctionTitle == null ? "" : auctionTitle.trim().toLowerCase(Locale.ROOT);
         String trimmedSortBy = sortBy == null ? "publishDate" : sortBy.trim();
 
+        java.time.LocalDate startLocalDate = null;
+        if (startDate != null && !startDate.trim().isEmpty()) {
+            try {
+                startLocalDate = java.time.LocalDate.parse(startDate.trim());
+            } catch (Exception e) {
+                log.warn("Invalid start date format: {}", startDate);
+            }
+        }
+
+        java.time.LocalDate endLocalDate = null;
+        if (endDate != null && !endDate.trim().isEmpty()) {
+            try {
+                endLocalDate = java.time.LocalDate.parse(endDate.trim());
+            } catch (Exception e) {
+                log.warn("Invalid end date format: {}", endDate);
+            }
+        }
+
+        final java.time.LocalDate finalStart = startLocalDate;
+        final java.time.LocalDate finalEnd = endLocalDate;
+
         return getActiveAuctions().stream()
                 .filter(dto -> trimmedAuctionId.isEmpty() || dto.getAuctionId().toString().contains(trimmedAuctionId))
                 .filter(dto -> trimmedAuctionTitle.isEmpty() || (dto.getItemName() != null && dto.getItemName().toLowerCase(Locale.ROOT).contains(trimmedAuctionTitle)))
+                .filter(dto -> finalStart == null || dto.getStartTime() == null || !dto.getStartTime().toLocalDate().isBefore(finalStart))
+                .filter(dto -> finalEnd == null || dto.getEndTime() == null || !dto.getEndTime().toLocalDate().isAfter(finalEnd))
                 .sorted(createAuctionComparator(trimmedSortBy))
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public AuctionResponseDTO getAuctionById(Long id) {
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + id));
@@ -121,6 +154,7 @@ public class AuctionService {
     /**
      * Returns all auctions created by a specific seller (by username).
      */
+    @Transactional(readOnly = true)
     public List<AuctionResponseDTO> getAuctionsBySeller(String username) {
         User seller = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Seller not found: " + username));
@@ -145,6 +179,7 @@ public class AuctionService {
         dto.setEndTime(auction.getEndTime());
         dto.setStatus(auction.getStatus().name());
         dto.setSellerUsername(auction.getSeller().getUsername());
+        dto.setBidCount(auction.getBids() != null ? auction.getBids().size() : 0);
         return dto;
     }
 

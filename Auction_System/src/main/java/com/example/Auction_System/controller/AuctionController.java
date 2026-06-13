@@ -31,12 +31,19 @@ public class AuctionController {
         return ResponseEntity.ok(auctionService.getActiveAuctions());
     }
 
+    @GetMapping("/completed")
+    public ResponseEntity<List<AuctionResponseDTO>> getCompletedAuctions() {
+        return ResponseEntity.ok(auctionService.getCompletedAuctions());
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<AuctionResponseDTO>> searchActiveAuctions(
             @RequestParam(required = false) String auctionId,
             @RequestParam(required = false) String auctionTitle,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String sortBy) {
-        return ResponseEntity.ok(auctionService.searchActiveAuctions(auctionId, auctionTitle, sortBy));
+        return ResponseEntity.ok(auctionService.searchActiveAuctions(auctionId, auctionTitle, startDate, endDate, sortBy));
     }
 
     @GetMapping("/{id}")

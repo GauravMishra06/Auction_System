@@ -6,6 +6,7 @@ import { useAuth, API_BASE_URL } from '../auth/auth';
 const CreateAuction = () => {
   const { getAuthorizedHeaders } = useAuth();
   const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     itemName: '',
     itemDescription: '',
@@ -14,101 +15,142 @@ const CreateAuction = () => {
     startPrice: '',
     durationInMinutes: '60'
   });
+
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState({ success: false, message: '' });
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const executeCreation = async (e) => {
     e.preventDefault();
     setStatus({ success: false, message: '' });
-
-    const payload = {
-      itemName: formData.itemName,
-      itemDescription: formData.itemDescription,
-      category: formData.category,
-      imageUrl: formData.imageUrl || null,
-      startPrice: parseFloat(formData.startPrice),
-      durationInMinutes: parseInt(formData.durationInMinutes, 10)
-    };
+    setUploading(true);
 
     try {
+      let finalImageUrl = formData.imageUrl || null;
+
+      // Upload file to local Spring Boot endpoint if selected
+      if (imageFile) {
+        const uploadData = new FormData();
+        uploadData.append('file', imageFile);
+
+        const uploadRes = await axios.post(`${API_BASE_URL}/api/images/upload`, uploadData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        finalImageUrl = uploadRes.data.url;
+      }
+
+      const payload = {
+        itemName: formData.itemName,
+        itemDescription: formData.itemDescription,
+        category: formData.category,
+        imageUrl: finalImageUrl,
+        startPrice: parseFloat(formData.startPrice),
+        durationInMinutes: parseInt(formData.durationInMinutes, 10)
+      };
+
       const headers = await getAuthorizedHeaders();
       const res = await axios.post(`${API_BASE_URL}/api/auctions/create`, payload, {
         headers: { ...headers, 'Content-Type': 'application/json' }
       });
+
       setStatus({ success: true, message: `Auction #${res.data.auctionId} created successfully.` });
       setFormData({ itemName: '', itemDescription: '', category: '', imageUrl: '', startPrice: '', durationInMinutes: '60' });
+      setImageFile(null);
+      setImagePreview('');
+      
+      // Redirect back to seller dashboard
       navigate('/dashboard/auctioneer');
     } catch (err) {
       setStatus({ success: false, message: err.response?.data?.message || 'Unable to create auction.' });
+    } finally {
+      setUploading(false);
     }
   };
 
   return (
-    <div style={styles.workspaceContainer}>
-      <div style={styles.breadcrumbBar}>Home / Publish Asset</div>
+    <div className="page-container fade-in">
+      <div className="breadcrumb">Home / Create Auction</div>
 
-      <div style={styles.formCardWrapper}>
-        <h3 style={styles.cardHeaderTitle}>Create New Auction Listing</h3>
-        <p style={styles.instructionText}>Enter the item details and publish a new auction.</p>
+      <div className="glass-card" style={{ maxWidth: '700px', margin: '0 auto' }}>
+        <h3 className="section-title" style={{ borderBottom: '1px solid var(--color-gray-lightest)', paddingBottom: '10px' }}>
+          Create New Auction Listing
+        </h3>
+        <p className="page-subtitle" style={{ marginBottom: 'var(--space-lg)' }}>
+          Enter the item details and publish a new auction lot.
+        </p>
 
-        <form onSubmit={executeCreation} style={styles.formLayout}>
-          <div style={styles.fieldGroup}>
-            <label style={styles.inputLabelElement}>Item Name</label>
-            <input type="text" name="itemName" value={formData.itemName} onChange={handleInputChange} required style={styles.textInputField} />
+        <form onSubmit={executeCreation} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+          <div className="form-group">
+            <label className="form-label">Item Name</label>
+            <input type="text" name="itemName" value={formData.itemName} onChange={handleInputChange} required className="form-input" placeholder="e.g. Vintage Gold Watch" />
           </div>
 
-          <div style={styles.fieldGroup}>
-            <label style={styles.inputLabelElement}>Description</label>
-            <textarea name="itemDescription" value={formData.itemDescription} onChange={handleInputChange} required style={{ ...styles.textInputField, minHeight: '100px', resize: 'vertical' }} />
+          <div className="form-group">
+            <label className="form-label">Description & Provenance</label>
+            <textarea name="itemDescription" value={formData.itemDescription} onChange={handleInputChange} required className="form-textarea" placeholder="Describe the item's details, origin, and condition..." />
           </div>
 
-          <div style={styles.fieldGroup}>
-            <label style={styles.inputLabelElement}>Category</label>
-            <input type="text" name="category" value={formData.category} onChange={handleInputChange} required style={styles.textInputField} />
+          <div className="form-group">
+            <label className="form-label">Category</label>
+            <input type="text" name="category" value={formData.category} onChange={handleInputChange} required className="form-input" placeholder="e.g. Fine Art, Horology, Antiquities" />
           </div>
 
-          <div style={styles.fieldGroup}>
-            <label style={styles.inputLabelElement}>Image URL (optional)</label>
-            <input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleInputChange} style={styles.textInputField} />
+          <div className="form-group">
+            <label className="form-label">Upload Item Image File</label>
+            <input type="file" accept="image/*" onChange={handleFileChange} className="form-input" style={{ padding: '8px 12px' }} />
+            {imagePreview && (
+              <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                <img src={imagePreview} alt="Preview" style={{ maxHeight: '160px', objectFit: 'contain', border: '1px solid var(--color-gray-lighter)', padding: '6px', backgroundColor: '#fdfcfb' }} />
+              </div>
+            )}
           </div>
 
-          <div style={styles.row}>
-            <div style={styles.fieldGroup}>
-              <label style={styles.inputLabelElement}>Start Price ($)</label>
-              <input type="number" name="startPrice" value={formData.startPrice} onChange={handleInputChange} min="0.01" step="0.01" required style={styles.textInputField} />
+          <div style={{ textAlign: 'center', color: 'var(--color-gray-light)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            — OR —
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Image URL</label>
+            <input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleInputChange} className="form-input" placeholder="https://example.com/image.jpg" disabled={!!imageFile} />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Start Price ($)</label>
+              <input type="number" name="startPrice" value={formData.startPrice} onChange={handleInputChange} min="0.01" step="0.01" required className="form-input" placeholder="0.00" />
             </div>
-            <div style={styles.fieldGroup}>
-              <label style={styles.inputLabelElement}>Duration (minutes)</label>
-              <input type="number" name="durationInMinutes" value={formData.durationInMinutes} onChange={handleInputChange} min="1" required style={styles.textInputField} />
+            <div className="form-group">
+              <label className="form-label">Duration (minutes)</label>
+              <input type="number" name="durationInMinutes" value={formData.durationInMinutes} onChange={handleInputChange} min="1" required className="form-input" />
             </div>
           </div>
 
-          <button type="submit" style={styles.submitFormButton}>Create Auction</button>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px' }} disabled={uploading}>
+            {uploading ? 'Uploading Assets...' : 'Publish Auction'}
+          </button>
         </form>
 
-        {status.message && <div style={status.success ? styles.successAlertBanner : styles.dangerAlertBanner}>{status.message}</div>}
+        {status.message && (
+          <div className={`alert ${status.success ? 'alert-success' : 'alert-danger'}`} style={{ marginTop: 'var(--space-lg)' }}>
+            {status.message}
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-const styles = {
-  workspaceContainer: { padding: '24px', backgroundColor: '#f8f9fa', minHeight: '100vh' },
-  breadcrumbBar: { backgroundColor: '#ffffff', padding: '12px 20px', borderRadius: '4px', marginBottom: '20px', border: '1px solid #e3e6f0', fontSize: '0.9rem', color: '#4e73df', fontWeight: '500' },
-  formCardWrapper: { backgroundColor: '#ffffff', border: '1px solid #e3e6f0', borderRadius: '6px', padding: '30px', maxWidth: '700px', margin: '0 auto', boxShadow: '0 0.15rem 1.75rem 0 rgba(58, 59, 120, 0.05)' },
-  cardHeaderTitle: { margin: '0 0 10px 0', borderBottom: '1px solid #e3e6f0', paddingBottom: '10px', color: '#4e73df', fontSize: '1.25rem', fontWeight: '700' },
-  instructionText: { color: '#6c757d', fontSize: '0.85rem', marginBottom: '25px', lineHeight: '1.5' },
-  formLayout: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  row: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' },
-  fieldGroup: { display: 'flex', flexDirection: 'column' },
-  inputLabelElement: { fontWeight: '600', marginBottom: '8px', color: '#495057', fontSize: '0.9rem' },
-  textInputField: { padding: '10px 14px', borderRadius: '4px', border: '1px solid #d1d3e2', fontSize: '0.95rem', outline: 'none' },
-  submitFormButton: { padding: '12px 24px', backgroundColor: '#1cc88a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', marginTop: '10px', boxShadow: '0 2px 4px rgba(28,200,138,0.25)' },
-  successAlertBanner: { padding: '12px', backgroundColor: '#d4edda', color: '#155724', fontSize: '0.9rem', borderRadius: '4px', border: '1px solid #c3e6cb', marginTop: '20px', fontWeight: '500', lineHeight: '1.4' },
-  dangerAlertBanner: { padding: '12px', backgroundColor: '#f8d7da', color: '#721c24', fontSize: '0.9rem', borderRadius: '4px', border: '1px solid #f5c6cb', marginTop: '20px', fontWeight: '500' }
 };
 
 export default CreateAuction;

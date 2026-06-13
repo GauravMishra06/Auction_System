@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth, API_BASE_URL } from '../auth/auth';
 
-const API = API_BASE_URL;
-
 const UserProfile = () => {
   const { auth, getAuthorizedHeaders } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -13,7 +11,7 @@ const UserProfile = () => {
     const loadProfile = async () => {
       try {
         const headers = await getAuthorizedHeaders();
-        const res = await axios.get(`${API}/api/users/${auth.userId}`, { headers });
+        const res = await axios.get(`${API_BASE_URL}/api/users/${auth.userId}`, { headers });
         setProfile(res.data);
       } catch (err) {
         setError(err.response?.data?.message || 'Unable to load profile.');
@@ -25,53 +23,53 @@ const UserProfile = () => {
     }
   }, [auth?.userId, getAuthorizedHeaders]);
 
-
   return (
-    <div style={styles.workspaceContainer}>
-      <div style={styles.breadcrumbBar}>Home / Profile</div>
+    <div className="page-container fade-in">
+      <div className="breadcrumb">Home / Profile</div>
 
-      <div style={styles.formCardWrapper}>
-        <h3 style={styles.cardHeaderTitle}>Active Profile Parameters</h3>
-        <p style={styles.instructionText}>Review your access role and account details.</p>
+      <div className="glass-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <h3 className="section-title" style={{ borderBottom: '1px solid var(--color-gray-lightest)', paddingBottom: '10px' }}>
+          My Profile
+        </h3>
+        <p className="page-subtitle" style={{ marginBottom: 'var(--space-lg)' }}>
+          Review your access role and account details.
+        </p>
 
-        {error && <div style={styles.error}>{error}</div>}
+        {error && <div className="alert alert-danger">{error}</div>}
 
         {profile && (
-          <div style={styles.statsGrid}>
-            <div style={styles.statBox}>
-              <span style={styles.statLabel}>User ID</span>
-              <span style={styles.statValue}>{profile.id}</span>
+          <>
+            <div className="profile-avatar">
+              {profile.username?.charAt(0).toUpperCase()}
             </div>
-            <div style={styles.statBox}>
-              <span style={styles.statLabel}>Username</span>
-              <span style={styles.statValue}>{profile.username}</span>
+
+            <div className="stats-grid">
+              <div className="stat-card stagger-item">
+                <span className="stat-label">User ID</span>
+                <span className="stat-value">{profile.id}</span>
+              </div>
+              <div className="stat-card stagger-item">
+                <span className="stat-label">Username</span>
+                <span className="stat-value" style={{ fontSize: '1.3rem' }}>{profile.username}</span>
+              </div>
+              <div className="stat-card stagger-item">
+                <span className="stat-label">Email</span>
+                <span className="stat-value" style={{ fontSize: '1.1rem', wordBreak: 'break-all' }}>{profile.email}</span>
+              </div>
+              <div className="stat-card stagger-item">
+                <span className="stat-label">System Role</span>
+                <span className="stat-value" style={{ fontSize: '1.1rem' }}>
+                  <span className={`badge ${profile.role === 'ROLE_ADMIN' ? 'badge-cancelled' : profile.role === 'ROLE_AUCTIONEER' ? 'badge-completed' : 'badge-active'}`} style={{ fontSize: '0.85rem', padding: '6px 14px' }}>
+                    {profile.role?.replace('ROLE_', '')}
+                  </span>
+                </span>
+              </div>
             </div>
-            <div style={styles.statBox}>
-              <span style={styles.statLabel}>Email</span>
-              <span style={styles.statValue}>{profile.email}</span>
-            </div>
-            <div style={styles.statBox}>
-              <span style={styles.statLabel}>System Role</span>
-              <span style={styles.statValue}>{profile.role}</span>
-            </div>
-          </div>
+          </>
         )}
       </div>
     </div>
   );
-};
-
-const styles = {
-  workspaceContainer: { padding: '24px', backgroundColor: '#f8f9fa', minHeight: '100vh' },
-  breadcrumbBar: { backgroundColor: '#ffffff', padding: '12px 20px', borderRadius: '4px', marginBottom: '20px', border: '1px solid #e3e6f0', fontSize: '0.9rem', color: '#4e73df', fontWeight: '500' },
-  formCardWrapper: { backgroundColor: '#ffffff', border: '1px solid #e3e6f0', borderRadius: '6px', padding: '30px', maxWidth: '800px', margin: '0 auto', boxShadow: '0 0.15rem 1.75rem 0 rgba(58, 59, 120, 0.05)' },
-  cardHeaderTitle: { margin: '0 0 10px 0', borderBottom: '1px solid #e3e6f0', paddingBottom: '10px', color: '#4e73df', fontSize: '1.25rem', fontWeight: '700' },
-  instructionText: { color: '#6c757d', fontSize: '0.85rem', marginBottom: '25px', lineHeight: '1.5' },
-  error: { background: '#f8d7da', color: '#721c24', padding: 10, borderRadius: 6, border: '1px solid #f5c6cb' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '20px' },
-  statBox: { padding: '20px', backgroundColor: '#f8f9fa', borderLeft: '4px solid #4e73df', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 0.1rem 0.5rem 0 rgba(58, 59, 120, 0.05)' },
-  statLabel: { fontSize: '0.8rem', fontWeight: '700', color: '#4e73df', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  statValue: { fontSize: '1.1rem', fontWeight: 'bold', color: '#5a5c69' }
 };
 
 export default UserProfile;

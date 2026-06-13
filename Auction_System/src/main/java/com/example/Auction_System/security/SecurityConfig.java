@@ -45,7 +45,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/auctions/active", "/api/auctions/*", "/api/bids/history/*").permitAll()
+                        .requestMatchers("/api/auctions/active", "/api/auctions/completed", "/api/auctions/search", "/api/auctions/*", "/api/bids/history/*").permitAll()
+                        .requestMatchers("/uploads/**", "/api/images/upload").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

@@ -9,6 +9,7 @@ const SignIn = () => {
   const [formData, setFormData] = useState({ username: '', password: '', captchaId: '', captchaAnswer: '' });
   const [captchaHint, setCaptchaHint] = useState('');
   const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const loadCaptcha = async () => {
     try {
@@ -31,6 +32,7 @@ const SignIn = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('');
+    setLoading(true);
 
     try {
       const res = await axios.post(`${API_BASE_URL}/api/auth/signin`, formData);
@@ -42,49 +44,80 @@ const SignIn = () => {
     } catch (err) {
       setStatus(err.response?.data?.message || 'Sign in failed.');
       await loadCaptcha();
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={styles.wrapper}>
-      <form onSubmit={handleSubmit} style={styles.card}>
-        <h2>Secure Sign In</h2>
-
-        <input name="username" placeholder="Username" value={formData.username} onChange={handleChange} required style={styles.input} />
-        <input name="password" placeholder="Password" type="password" value={formData.password} onChange={handleChange} required style={styles.input} />
-
-        <div style={styles.captchaRow}>
-          <div style={styles.captchaDisplay}>{captchaHint || 'Loading...'}</div>
-          <button type="button" onClick={loadCaptcha} style={styles.secondaryButton}>🔄 Refresh</button>
+    <div className="auth-page page-bg-auth fade-in">
+      <div className="glass-card auth-card">
+        <div className="auth-header">
+          <h2 className="page-title" style={{ textAlign: 'center', fontSize: '1.6rem', marginBottom: '8px' }}>Welcome Back</h2>
+          <p className="page-subtitle" style={{ textAlign: 'center' }}>Sign in to your auction account</p>
         </div>
 
-        <input
-          name="captchaAnswer"
-          placeholder="Type the characters without spaces"
-          value={formData.captchaAnswer}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label className="form-label">Username</label>
+            <input
+              name="username"
+              placeholder="Enter your username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              className="form-input"
+            />
+          </div>
 
-        <button type="submit" style={styles.primaryButton}>Sign In</button>
-        <Link to="/forgot-password" style={styles.link}>Forgot password?</Link>
-        {status && <p style={styles.error}>{status}</p>}
-      </form>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input
+              name="password"
+              placeholder="Enter your password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="form-input"
+            />
+          </div>
+
+          <div className="captcha-box">
+            <div className="captcha-display">{captchaHint || 'Loading...'}</div>
+            <button type="button" onClick={loadCaptcha} className="btn btn-secondary btn-sm" style={{ height: '100%', padding: '12px' }}>Refresh</button>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Captcha Answer</label>
+            <input
+              name="captchaAnswer"
+              placeholder="Type the characters without spaces"
+              value={formData.captchaAnswer}
+              onChange={handleChange}
+              required
+              className="form-input"
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '0.5rem' }} disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+
+          <div className="auth-links">
+            <Link to="/forgot-password">Forgot password?</Link>
+            <Link to="/register">Don't have an account? Register</Link>
+          </div>
+
+          {status && (
+            <div className={`alert ${status.includes('failed') || status.includes('Unable') ? 'alert-danger' : 'alert-success'}`}>
+              {status}
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
-};
-
-const styles = {
-  wrapper: { minHeight: '70vh', display: 'grid', placeItems: 'center', padding: 24 },
-  card: { width: '100%', maxWidth: 420, background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 24, display: 'flex', flexDirection: 'column', gap: 12 },
-  input: { padding: '10px 12px', border: '1px solid #cfcfcf', borderRadius: 6 },
-  captchaRow: { display: 'flex', alignItems: 'center', gap: 12 },
-  captchaDisplay: { letterSpacing: 6, fontWeight: 700, padding: '10px 16px', border: '2px dashed #4e73df', borderRadius: 6, background: '#f0f4ff', fontSize: '1.2rem', color: '#333', fontFamily: 'monospace', minWidth: 140, textAlign: 'center', userSelect: 'none' },
-  primaryButton: { background: '#114fbf', color: '#fff', border: 0, borderRadius: 6, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 },
-  secondaryButton: { background: '#eef2ff', border: '1px solid #b8c5ff', borderRadius: 6, padding: '8px 10px', cursor: 'pointer', fontWeight: 600 },
-  link: { color: '#114fbf', textDecoration: 'none', fontSize: 14 },
-  error: { color: '#a30000', margin: 0 }
 };
 
 export default SignIn;

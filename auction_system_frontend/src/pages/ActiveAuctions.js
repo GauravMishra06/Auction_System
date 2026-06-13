@@ -1,118 +1,164 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuctionCard from '../components/AuctionCard';
+import { API_BASE_URL } from '../auth/auth';
 
 const ActiveAuctions = () => {
-  // 1. Search Form Filter State Parameters
   const [searchParams, setSearchParams] = useState({
     auctionId: '',
     auctionTitle: '',
+    startDate: '',
+    endDate: '',
     sortBy: 'publishDate'
   });
 
-  // 2. Data Management and UI Logic States
   const [auctions, setAuctions] = useState([]);
   const [filteredAuctions, setFilteredAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Initial data synchronization hook on component mount
   useEffect(() => {
-    axios.get('http://localhost:8080/api/auctions/active')
+    axios.get(`${API_BASE_URL}/api/auctions/active`)
       .then(response => {
         setAuctions(response.data);
-        setFilteredAuctions(response.data); // Set default full list visibility layout
+        setFilteredAuctions(response.data);
         setLoading(false);
       })
-      .catch(error => {
-        console.error("Database query extraction failure logs:", error);
+      .catch(() => {
         setLoading(false);
       });
   }, []);
 
-  // Track real-time form input modifications
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setSearchParams({ ...searchParams, [name]: value });
   };
 
-  // Process operational execution upon clicking 'Search'
   const handleSearchExecute = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
     try {
-      const response = await axios.get('http://localhost:8080/api/auctions/search', {
+      const response = await axios.get(`${API_BASE_URL}/api/auctions/search`, {
         params: {
           auctionId: searchParams.auctionId,
           auctionTitle: searchParams.auctionTitle,
+          startDate: searchParams.startDate,
+          endDate: searchParams.endDate,
           sortBy: searchParams.sortBy
         }
       });
       setFilteredAuctions(response.data);
     } catch (error) {
       console.error('Search request failed:', error);
-      setErrorMessage('Search failed. Please ensure the backend and database are running.');
+      setErrorMessage('Search failed. Please ensure the backend is running.');
     }
   };
 
-  // Flush out search forms back to the absolute base state context
   const handleFormReset = () => {
-    setSearchParams({ auctionId: '', auctionTitle: '', sortBy: 'publishDate' });
+    setSearchParams({ auctionId: '', auctionTitle: '', startDate: '', endDate: '', sortBy: 'publishDate' });
     setFilteredAuctions(auctions);
     setErrorMessage('');
   };
 
-  if (loading) return <h3 style={{ textAlign: 'center', padding: '50px' }}>Loading Live Auction System Frameworks...</h3>;
+  if (loading) {
+    return (
+      <div className="loading-state">
+        <div className="spinner"></div>
+        <p>Loading curated catalogue...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={styles.workspaceContainer}>
-      {/* Search Console Header Breadcrumb Title */}
-      <div style={styles.breadcrumbBar}>Home / Active Auctions</div>
+    <div className="page-container page-bg-catalog fade-in">
+      <div className="breadcrumb">Home / Curated Lots</div>
 
-      <div style={styles.searchConsoleWrapper}>
-        <h3 style={styles.consoleTitleHeader}>Active Auctions Search Matrix</h3>
+      <div className="glass-card" style={{ marginBottom: 'var(--space-xl)' }}>
+        <h3 className="section-title" style={{ borderBottom: '1px solid var(--color-gray-lighter)', paddingBottom: '12px', marginBottom: '24px' }}>
+          Search Catalogue
+        </h3>
         <form onSubmit={handleSearchExecute}>
-          
-          {/* Main Input Field Row Block */}
-          <div style={styles.inputFormRow}>
-            <div style={styles.fieldGroup}>
-              <label style={styles.inputLabelElement}>Auction ID</label>
-              <input type="text" name="auctionId" value={searchParams.auctionId} onChange={handleInputChange} placeholder="Enter exact Auction ID record" style={styles.textInputField} />
+          <div className="form-row" style={{ marginBottom: 'var(--space-lg)' }}>
+            <div className="form-group">
+              <label className="form-label">Lot ID</label>
+              <input
+                type="text"
+                name="auctionId"
+                value={searchParams.auctionId}
+                onChange={handleInputChange}
+                placeholder="Enter lot number"
+                className="form-input"
+              />
             </div>
-            <div style={styles.fieldGroup}>
-              <label style={styles.inputLabelElement}>Auction Title</label>
-              <input type="text" name="auctionTitle" value={searchParams.auctionTitle} onChange={handleInputChange} placeholder="Enter item descriptive keywords" style={styles.textInputField} />
+            <div className="form-group">
+              <label className="form-label">Keyword / Title</label>
+              <input
+                type="text"
+                name="auctionTitle"
+                value={searchParams.auctionTitle}
+                onChange={handleInputChange}
+                placeholder="e.g. Modern art, Gold"
+                className="form-input"
+              />
             </div>
           </div>
 
-          {/* Sorting Option Element Line */}
-          <div style={styles.sortOptionsWrapper}>
-            <span style={{ fontWeight: 'bold', color: '#495057', marginRight: '15px' }}>Select Sorting Option:</span>
-            <label style={styles.radioLabelOption}>
-              <input type="radio" name="sortBy" value="publishDate" checked={searchParams.sortBy === 'publishDate'} onChange={handleInputChange} style={{ marginRight: '6px' }} /> Submission/Publish Date
+          <div className="form-row" style={{ marginBottom: 'var(--space-lg)' }}>
+            <div className="form-group">
+              <label className="form-label">Published On or After</label>
+              <input
+                type="date"
+                name="startDate"
+                value={searchParams.startDate}
+                onChange={handleInputChange}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Ending On or Before</label>
+              <input
+                type="date"
+                name="endDate"
+                value={searchParams.endDate}
+                onChange={handleInputChange}
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="filter-bar" style={{ marginBottom: '24px' }}>
+            <span style={{ fontWeight: '600', color: 'var(--color-dark)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Sort by:</span>
+            <label>
+              <input type="radio" name="sortBy" value="publishDate" checked={searchParams.sortBy === 'publishDate'} onChange={handleInputChange} />
+              Publish Date
             </label>
-            <label style={styles.radioLabelOption}>
-              <input type="radio" name="sortBy" value="auctionId" checked={searchParams.sortBy === 'auctionId'} onChange={handleInputChange} style={{ marginRight: '6px' }} /> Auction ID
+            <label>
+              <input type="radio" name="sortBy" value="auctionId" checked={searchParams.sortBy === 'auctionId'} onChange={handleInputChange} />
+              Lot Number
             </label>
           </div>
 
-          {errorMessage && <div style={styles.dangerAlertBanner}>{errorMessage}</div>}
-          <div style={styles.infoInstructionBar}>Use search and sorting filters to find active auctions.</div>
+          {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
 
-          {/* Action Trigger Buttons Section */}
-          <div style={styles.buttonActionConsoleBar}>
-            <button type="button" onClick={handleFormReset} style={styles.clearFormButton}>Clear Filters</button>
-            <button type="submit" style={styles.searchSubmitButton}>Execute Search</button>
+          <div className="action-row" style={{ marginTop: '24px' }}>
+            <button type="button" onClick={handleFormReset} className="btn btn-secondary">Clear Filters</button>
+            <button type="submit" className="btn btn-primary">Search</button>
           </div>
         </form>
       </div>
 
-      {/* Grid Results Container View Block */}
-      <h3 style={{ borderBottom: '2px solid #343a40', paddingBottom: '8px', color: '#2b2d42' }}>Live Results Match Grid</h3>
-      <div style={styles.resultsGridMatrix}>
+      <h3 className="section-title" style={{ fontSize: '1.6rem', marginBottom: '20px' }}>Curated Lots ({filteredAuctions.length})</h3>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: '2rem',
+        marginTop: '1rem'
+      }}>
         {filteredAuctions.length === 0 ? (
-          <p style={{ color: '#6c757d', padding: '30px' }}>No active auction items match the current search criteria rules configuration.</p>
+          <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
+            <p>No active lots match the current search criteria.</p>
+          </div>
         ) : (
           filteredAuctions.map(item => (
             <AuctionCard key={item.auctionId} auction={item} />
@@ -121,26 +167,6 @@ const ActiveAuctions = () => {
       </div>
     </div>
   );
-};
-
-// CSS-in-JS style configurations mimicking the professional structure from the uploaded image
-const styles = {
-  workspaceContainer: { padding: '24px', backgroundColor: '#f8f9fa', minHeight: '100vh' },
-  breadcrumbBar: { backgroundColor: '#ffffff', padding: '12px 20px', borderRadius: '4px', marginBottom: '20px', border: '1px solid #e3e6f0', fontSize: '0.9rem', color: '#4e73df', fontWeight: '500' },
-  searchConsoleWrapper: { backgroundColor: '#ffffff', border: '1px solid #e3e6f0', borderRadius: '6px', padding: '24px', marginBottom: '30px', boxShadow: '0 0.15rem 1.75rem 0 rgba(58, 59, 120, 0.05)' },
-  consoleTitleHeader: { margin: '0 0 20px 0', borderBottom: '1px solid #e3e6f0', paddingBottom: '10px', color: '#4e73df', fontSize: '1.2rem', fontWeight: '700' },
-  inputFormRow: { display: 'flex', gap: '24px', marginBottom: '20px', flexWrap: 'wrap' },
-  fieldGroup: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: '260px' },
-  inputLabelElement: { fontWeight: '600', marginBottom: '8px', color: '#495057', fontSize: '0.9rem' },
-  textInputField: { padding: '10px 14px', borderRadius: '4px', border: '1px solid #d1d3e2', fontSize: '0.95rem', transition: 'border-color 0.15s ease-in-out', outline: 'none' },
-  sortOptionsWrapper: { marginBottom: '20px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '15px', fontSize: '0.9rem' },
-  radioLabelOption: { marginRight: '20px', color: '#495057', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' },
-  infoInstructionBar: { padding: '8px 12px', backgroundColor: '#fff3cd', color: '#856404', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid #ffeeba', marginBottom: '20px' },
-  dangerAlertBanner: { padding: '10px 12px', backgroundColor: '#f8d7da', color: '#721c24', fontSize: '0.9rem', borderRadius: '4px', border: '1px solid #f5c6cb', marginBottom: '20px', fontWeight: '500' },
-  buttonActionConsoleBar: { display: 'flex', justifyContent: 'flex-end', gap: '15px', borderTop: '1px solid #e3e6f0', paddingTop: '15px' },
-  clearFormButton: { padding: '10px 20px', backgroundColor: '#858796', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem' },
-  searchSubmitButton: { padding: '10px 24px', backgroundColor: '#4e73df', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', boxShadow: '0 2px 4px rgba(78,115,223,0.25)' },
-  resultsGridMatrix: { display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '20px', justifyContent: 'flex-start' }
 };
 
 export default ActiveAuctions;

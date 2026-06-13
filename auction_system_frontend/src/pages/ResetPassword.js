@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../auth/auth';
 
@@ -9,55 +9,81 @@ const ResetPassword = () => {
 
   const [token, setToken] = useState(initialToken);
   const [newPassword, setNewPassword] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState({ success: false, message: '' });
+  const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
-    setStatus('');
+    setStatus({ success: false, message: '' });
+    setLoading(true);
 
     try {
       const res = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, { token, newPassword });
-      setStatus(res.data.message || 'Password reset successful.');
+      setStatus({ success: true, message: res.data.message || 'Password reset successful.' });
       setNewPassword('');
     } catch (err) {
-      setStatus(err.response?.data?.message || 'Unable to reset password.');
+      setStatus({ success: false, message: err.response?.data?.message || 'Unable to reset password.' });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={styles.wrapper}>
-      <form onSubmit={submit} style={styles.card}>
-        <h2>Reset Password</h2>
-        <input
-          type="text"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          required
-          placeholder="Reset token"
-          style={styles.input}
-        />
-        <input
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-          minLength={8}
-          placeholder="New password"
-          style={styles.input}
-        />
-        <button type="submit" style={styles.button}>Reset Password</button>
-        {status && <p style={styles.status}>{status}</p>}
-      </form>
+    <div className="auth-page page-bg-auth fade-in">
+      <div className="glass-card auth-card">
+        <div className="auth-header">
+          <h2 className="page-title" style={{ textAlign: 'center', fontSize: '1.6rem', marginBottom: '8px' }}>Reset Password</h2>
+          <p className="page-subtitle" style={{ textAlign: 'center' }}>Enter your reset token and new password</p>
+        </div>
+
+        <form onSubmit={submit} className="auth-form">
+          <div className="form-group">
+            <label className="form-label">Reset Token</label>
+            <input
+              type="text"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              required
+              placeholder="Paste your reset token"
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">New Password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={8}
+              placeholder="At least 8 characters"
+              className="form-input"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '12px', marginTop: '0.5rem' }}
+            disabled={loading}
+          >
+            {loading ? 'Resetting...' : 'Reset Password'}
+          </button>
+
+          <div className="auth-links" style={{ justifyContent: 'center' }}>
+            <Link to="/signin">← Back to Sign In</Link>
+          </div>
+
+          {status.message && (
+            <div className={`alert ${status.success ? 'alert-success' : 'alert-danger'}`}>
+              {status.message}
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
-};
-
-const styles = {
-  wrapper: { minHeight: '70vh', display: 'grid', placeItems: 'center', padding: 24 },
-  card: { width: '100%', maxWidth: 420, background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 24, display: 'flex', flexDirection: 'column', gap: 12 },
-  input: { padding: '10px 12px', border: '1px solid #cfcfcf', borderRadius: 6 },
-  button: { background: '#114fbf', color: '#fff', border: 0, borderRadius: 6, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 },
-  status: { margin: 0, color: '#333' }
 };
 
 export default ResetPassword;

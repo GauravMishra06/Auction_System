@@ -15,7 +15,7 @@ const CountdownTimer = ({ endTime }) => {
 
       if (diff <= 0) {
         setIsExpired(true);
-        setTimeLeft('Auction Ended');
+        setTimeLeft('Auction Closed');
         return;
       }
 
@@ -36,18 +36,22 @@ const CountdownTimer = ({ endTime }) => {
   }, [endTime]);
 
   return (
-    <div style={{
-      padding: '12px 20px',
-      borderRadius: '8px',
-      background: isExpired ? '#f8d7da' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      color: isExpired ? '#721c24' : '#fff',
-      fontWeight: 'bold',
-      fontSize: '1.1rem',
-      textAlign: 'center',
-      letterSpacing: '1px',
-      marginBottom: '16px'
-    }}>
-      {isExpired ? '⏰ Auction Ended' : `⏱️ ${timeLeft}`}
+    <div 
+      className={`glass-card ${isExpired ? '' : 'glass-card-dark'}`} 
+      style={{
+        padding: '16px 20px',
+        fontSize: '0.85rem',
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        textAlign: 'center',
+        letterSpacing: '0.15em',
+        marginBottom: 'var(--space-lg)',
+        background: isExpired ? 'var(--color-danger-light)' : 'var(--color-dark)',
+        color: isExpired ? 'var(--color-danger-dark)' : 'var(--color-primary)',
+        border: isExpired ? '1px solid var(--color-danger)' : '1px solid var(--color-primary)'
+      }}
+    >
+      {isExpired ? 'Auction Closed' : `Time Remaining: ${timeLeft}`}
     </div>
   );
 };
@@ -101,69 +105,122 @@ const AuctionDetails = () => {
       });
   };
 
-  if (!auction) return <h2 style={{ textAlign: 'center', padding: '50px' }}>Loading auction details...</h2>;
+  if (!auction) {
+    return (
+      <div className="loading-state">
+        <div className="spinner"></div>
+        <p>Loading lot details...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: '30px', display: 'flex', gap: '50px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="page-container page-bg-details fade-in" style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
       {/* Left Column: Details */}
-      <div style={{ flex: 2 }}>
-        <h1>{auction.itemName}</h1>
-        <CountdownTimer endTime={auction.endTime} />
-        {auction.imageUrl && (
-          <img src={auction.imageUrl} alt={auction.itemName} style={{ width: '100%', maxHeight: '380px', objectFit: 'contain', background: '#f8f9fa', borderRadius: '6px' }} />
-        )}
-        <p style={{ fontSize: '1.1rem', marginTop: '20px', lineHeight: '1.6' }}>{auction.itemDescription}</p>
-        <hr/>
-        <h3>Current Valuation: <span style={{ color: '#28a745' }}>${auction.currentHighestBid}</span></h3>
-        <p><strong>Seller:</strong> {auction.sellerUsername}</p>
-        <p><strong>Closes:</strong> {new Date(auction.endTime).toLocaleString()}</p>
-        <p><strong>Status:</strong> <span style={{
-          padding: '4px 10px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 600,
-          background: auction.status === 'ACTIVE' ? '#d4edda' : '#f8d7da',
-          color: auction.status === 'ACTIVE' ? '#155724' : '#721c24'
-        }}>{auction.status}</span></p>
+      <div style={{ flex: 2, minWidth: '320px' }}>
+        <h1 className="page-title" style={{ fontSize: '2.5rem', marginBottom: 'var(--space-md)' }}>{auction.itemName}</h1>
+        <div className="breadcrumb" style={{ borderBottom: 'none', marginBottom: '1.5rem', paddingBottom: 0 }}>Lot #{auction.auctionId} / {auction.category}</div>
         
-        {auction.status === 'ACTIVE' && (
-          <form onSubmit={executeBidSubmission} style={{ marginTop: '25px', padding: '15px', background: '#f1f3f5', borderRadius: '6px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Place Your Bid ($):</label>
-            <input 
-              type="number" 
-              step="0.01"
-              value={bidAmount} 
-              onChange={(e) => setBidAmount(e.target.value)}
-              placeholder={`Must exceed $${auction.currentHighestBid}`}
-              required
-              style={{ padding: '10px', width: '220px', fontSize: '1rem', marginRight: '15px', border: '1px solid #ced4da', borderRadius: '4px' }}
-            />
-            <button type="submit" style={{ padding: '10px 22px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-              Submit Bid
-            </button>
-            {!auth?.token && (
-              <p style={{ color: '#a30000', marginTop: '10px' }}>You must sign in as a bidder to place a bid.</p>
-            )}
-          </form>
+        <CountdownTimer endTime={auction.endTime} />
+
+        {auction.imageUrl && (
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--space-xl)', border: '1px solid var(--color-gray-lighter)' }}>
+            <img src={auction.imageUrl} alt={auction.itemName} style={{ width: '100%', maxHeight: '450px', objectFit: 'contain', background: '#fcfbf9' }} />
+          </div>
         )}
-        {statusMessage && (
-          <p style={{ fontWeight: 'bold', marginTop: '12px', color: statusType === 'success' ? '#155724' : '#dc3545' }}>
-            {statusMessage}
+
+        <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+          <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-gray-lightest)', paddingBottom: '8px', marginBottom: '16px' }}>Description & Provenance</h3>
+          <p style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--color-dark-light)', margin: '0 0 var(--space-xl) 0' }}>
+            {auction.itemDescription}
           </p>
+
+          <div className="stats-grid" style={{ marginBottom: 'var(--space-lg)', gridTemplateColumns: 'repeat(2, 1fr)' }}>
+            <div className="stat-card" style={{ borderTopColor: 'var(--color-primary)' }}>
+              <span className="stat-label">Current Valuation</span>
+              <span className="stat-value" style={{ color: 'var(--color-primary-dark)' }}>${auction.currentHighestBid?.toFixed(2)}</span>
+            </div>
+            <div className="stat-card" style={{ borderTopColor: 'var(--color-gray)' }}>
+              <span className="stat-label">Start Price</span>
+              <span className="stat-value">${auction.startPrice?.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', fontSize: '0.85rem', color: 'var(--color-gray)', textTransform: 'uppercase', letterSpacing: '0.05em', borderTop: '1px solid var(--color-gray-lightest)', paddingTop: '16px' }}>
+            <span><strong>Seller:</strong> {auction.sellerUsername}</span>
+            <span><strong>Closing:</strong> {new Date(auction.endTime).toLocaleString()}</span>
+            <span><strong>Status:</strong>{' '}
+              <span className={`badge ${auction.status === 'ACTIVE' ? 'badge-active' : auction.status === 'COMPLETED' ? 'badge-completed' : 'badge-cancelled'}`}>
+                {auction.status}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        {auction.status === 'ACTIVE' && (
+          <div className="bid-form">
+            <form onSubmit={executeBidSubmission}>
+              <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: '700' }}>Submit Bid ($)</label>
+              <div className="bid-input-row" style={{ marginTop: '8px' }}>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={bidAmount}
+                  onChange={(e) => setBidAmount(e.target.value)}
+                  placeholder={`Min. $${(auction.currentHighestBid + 0.01).toFixed(2)}`}
+                  required
+                  className="form-input"
+                  style={{ flex: 1, minWidth: '180px' }}
+                />
+                <button type="submit" className="btn btn-primary">Place Bid</button>
+              </div>
+              {!auth?.token && (
+                <p style={{ color: 'var(--color-danger)', marginTop: '12px', fontSize: '0.85rem' }}>
+                  You must sign in as a bidder to place a bid.
+                </p>
+              )}
+            </form>
+          </div>
+        )}
+
+        {statusMessage && (
+          <div className={`alert ${statusType === 'success' ? 'alert-success' : 'alert-danger'}`} style={{ marginTop: 'var(--space-lg)' }}>
+            {statusMessage}
+          </div>
         )}
       </div>
 
       {/* Right Column: Bid History */}
-      <div style={{ flex: 1, borderLeft: '1px solid #dee2e6', paddingLeft: '30px' }}>
-        <h2>Bidding Log ({bidHistory.length})</h2>
-        <div style={{ maxHeight: '420px', overflowY: 'auto', border: '1px solid #eee', padding: '10px', borderRadius: '4px' }}>
-          {bidHistory.length === 0 ? (
-            <p style={{ color: '#777' }}>No bids placed yet. Be the first!</p>
-          ) : (
-            bidHistory.map((log) => (
-              <div key={log.bidId} style={{ padding: '10px', borderBottom: '1px solid #f1f3f5' }}>
-                <strong>{log.bidderUsername}</strong> bid <span style={{ color: '#28a745', fontWeight: 'bold' }}>${log.bidAmount}</span>
-                <div style={{ fontSize: '0.75rem', color: '#868e96', marginTop: '3px' }}>{new Date(log.bidTime).toLocaleString()}</div>
-              </div>
-            ))
-          )}
+      <div style={{ flex: 1, minWidth: '290px' }}>
+        <div className="glass-card" style={{ height: '100%', boxSizing: 'border-box' }}>
+          <h3 className="section-title" style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-gray-lightest)', paddingBottom: '12px', marginBottom: '16px' }}>Bidding History ({bidHistory.length})</h3>
+          <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+            {bidHistory.length === 0 ? (
+              <p style={{ color: 'var(--color-gray-light)', textAlign: 'center', padding: 'var(--space-xl) 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                No bids recorded. Be the first to place a bid.
+              </p>
+            ) : (
+              bidHistory.map((log) => (
+                <div key={log.bidId} style={{
+                  padding: '14px 0',
+                  borderBottom: '1px solid var(--color-gray-lightest)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline'
+                }}>
+                  <div>
+                    <strong style={{ color: 'var(--color-dark)', fontSize: '0.9rem' }}>{log.bidderUsername}</strong>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--color-gray-light)', marginTop: '4px' }}>
+                      {new Date(log.bidTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — {new Date(log.bidTime).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <span style={{ color: 'var(--color-primary-dark)', fontWeight: '600', fontSize: '1.05rem', fontFamily: 'var(--font-serif)' }}>
+                    ${log.bidAmount?.toFixed(2)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

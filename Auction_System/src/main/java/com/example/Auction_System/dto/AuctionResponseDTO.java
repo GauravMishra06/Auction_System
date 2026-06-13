@@ -20,4 +20,5 @@ public class AuctionResponseDTO {
     private LocalDateTime endTime;
     private String status;
     private String sellerUsername; // Avoids sending back the whole nested User object structure
+    private int bidCount;
 }

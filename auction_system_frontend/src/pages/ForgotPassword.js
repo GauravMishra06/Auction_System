@@ -1,50 +1,72 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../auth/auth';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState({ success: false, message: '' });
+  const [loading, setLoading] = useState(false);
 
-  const submit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus('');
+    setStatus({ success: false, message: '' });
+    setLoading(true);
 
     try {
       const res = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
-      setStatus(res.data.message || 'If the email is registered, reset instructions are sent.');
+      setStatus({ success: true, message: res.data.message || 'If that email exists, a reset link has been sent.' });
+      setEmail('');
     } catch (err) {
-      setStatus(err.response?.data?.message || 'Unable to process request.');
+      setStatus({ success: false, message: err.response?.data?.message || 'Unable to process request.' });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={styles.wrapper}>
-      <form onSubmit={submit} style={styles.card}>
-        <h2>Forgot Password</h2>
-        <p style={styles.text}>Enter your registered email address.</p>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          placeholder="Email"
-          style={styles.input}
-        />
-        <button type="submit" style={styles.button}>Send Reset Link</button>
-        {status && <p style={styles.status}>{status}</p>}
-      </form>
+    <div className="auth-page page-bg-auth fade-in">
+      <div className="glass-card auth-card">
+        <div className="auth-header">
+          <h2 className="page-title" style={{ textAlign: 'center', fontSize: '1.6rem', marginBottom: '8px' }}>Forgot Password</h2>
+          <p className="page-subtitle" style={{ textAlign: 'center' }}>Enter your email to receive a password reset link</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label className="form-label">Email Address</label>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="form-input"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '12px', marginTop: '0.5rem' }}
+            disabled={loading}
+          >
+            {loading ? 'Sending...' : 'Send Reset Link'}
+          </button>
+
+          <div className="auth-links" style={{ justifyContent: 'center' }}>
+            <Link to="/signin">← Back to Sign In</Link>
+          </div>
+
+          {status.message && (
+            <div className={`alert ${status.success ? 'alert-success' : 'alert-danger'}`}>
+              {status.message}
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
-};
-
-const styles = {
-  wrapper: { minHeight: '70vh', display: 'grid', placeItems: 'center', padding: 24 },
-  card: { width: '100%', maxWidth: 420, background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 24, display: 'flex', flexDirection: 'column', gap: 12 },
-  text: { margin: 0, color: '#666', fontSize: 14 },
-  input: { padding: '10px 12px', border: '1px solid #cfcfcf', borderRadius: 6 },
-  button: { background: '#114fbf', color: '#fff', border: 0, borderRadius: 6, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 },
-  status: { margin: 0, color: '#333' }
 };
 
 export default ForgotPassword;

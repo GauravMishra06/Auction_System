@@ -1,5 +1,7 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BackgroundManager } from './components/BackgroundManager';
+import HomePage from './pages/HomePage';
 import ActiveAuctions from './pages/ActiveAuctions';
 import AuctionDetails from './pages/AuctionDetails';
 import Register from './pages/Register';
@@ -16,8 +18,36 @@ import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './auth/auth';
 
+const PAGE_TITLES = {
+  '/': 'eAuction — Premium Electronic Auction Platform',
+  '/auctions': 'Active Auctions — eAuction',
+  '/signin': 'Sign In — eAuction',
+  '/register': 'Create Account — eAuction',
+  '/forgot-password': 'Forgot Password — eAuction',
+  '/reset-password': 'Reset Password — eAuction',
+  '/create-auction': 'Create Auction — eAuction',
+  '/profile': 'My Profile — eAuction',
+  '/dashboard/bidder': 'Bidder Dashboard — eAuction',
+  '/dashboard/auctioneer': 'Auctioneer Portal — eAuction',
+  '/dashboard/admin': 'Admin Control Panel — eAuction',
+};
+
 function AppContent() {
   const { auth, logoutSession } = useAuth();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isAuthPage = ['/signin', '/register', '/forgot-password', '/reset-password'].includes(location.pathname);
+
+  // Dynamic page title for SEO
+  useEffect(() => {
+    const title = PAGE_TITLES[location.pathname] || 'eAuction';
+    document.title = title;
+  }, [location.pathname]);
+
+  // Close sidebar on navigation
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     await logoutSession();
@@ -25,38 +55,50 @@ function AppContent() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', fontFamily: '"Segoe UI", Roboto, sans-serif' }}>
+    <div className="app-root">
+      <BackgroundManager />
       
-      {/* Top Branding Portal Header Banner */}
-      <header style={styles.topHeaderBanner}>
-        <div style={styles.headerIdentityBlock}>
-          <div style={styles.governmentEmblemSymbol}>🏛️</div>
-          <div>
-            <h1 style={styles.portalMainTitle}>eAuction Portal Management System</h1>
-            <p style={styles.portalSubtitleLabel}>A secure, transparent platform for conducting Electronic Auctions</p>
+      {/* Top Header */}
+      <header className="app-header">
+        <div className="header-brand">
+          {auth?.token && !isAuthPage && (
+            <button className="mobile-menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle navigation menu">
+              {sidebarOpen ? '✕' : '☰'}
+            </button>
+          )}
+          <Link to="/" className="header-logo">E-AUCTION</Link>
+          <div className="header-text">
+            <p>Premium Electronic Auction Platform</p>
           </div>
         </div>
-        <div style={styles.authControlContainer}>
+        <div className="header-actions">
           {!auth?.token ? (
-            <Link to="/signin" style={styles.portalLoginButton}>Secure Access Login</Link>
+            <>
+              <Link to="/signin" className="btn btn-ghost btn-sm">Sign In</Link>
+              <Link to="/register" className="btn btn-primary btn-sm">Register</Link>
+            </>
           ) : (
-            <button onClick={handleLogout} style={styles.portalLoginButton}>Logout ({auth.username})</button>
+            <>
+              <span className="header-user">Welcome, {auth.username}</span>
+              <button onClick={handleLogout} className="btn btn-secondary btn-sm">Logout</button>
+            </>
           )}
         </div>
       </header>
 
-      {/* Core Layout split: Left fixed Navigation Drawer, Right dynamic Content Window */}
-      <div style={{ display: 'flex', flex: 1 }}>
-        <Sidebar />
+      {/* Main Layout */}
+      <div className="app-body">
+        {!isAuthPage && <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
         
-        <main style={{ flex: 1, backgroundColor: '#f4f6f9', minWidth: '0' }}>
+        <main className="app-main" style={isAuthPage ? { marginLeft: 0 } : {}}>
           <Routes>
-            <Route path="/" element={<ActiveAuctions />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/auctions" element={<ActiveAuctions />} />
+            <Route path="/auctions/:id" element={<AuctionDetails />} />
             <Route path="/signin" element={<SignIn />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/auctions/:id" element={<AuctionDetails />} />
-            <Route path="/register" element={<Register />} />
             <Route
               path="/create-auction"
               element={
@@ -102,10 +144,12 @@ function AppContent() {
         </main>
       </div>
 
-      {/* Global Footer */}
-      <footer style={styles.platformFooter}>
-        eAuction Portal Management System — Secure Electronic Auction Platform v2.0
-      </footer>
+      {/* Footer */}
+      {!isAuthPage && (
+        <footer className="app-footer">
+          eAuction — Secure Electronic Auction Platform v2.0
+        </footer>
+      )}
     </div>
   );
 }
@@ -119,16 +163,5 @@ function App() {
     </AuthProvider>
   );
 }
-
-const styles = {
-  topHeaderBanner: { backgroundColor: '#4a154b', padding: '14px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ffffff', boxShadow: '0 2px 5px rgba(0,0,0,0.15)', borderBottom: '3px solid #ffc107' },
-  headerIdentityBlock: { display: 'flex', alignItems: 'center', gap: '18px' },
-  governmentEmblemSymbol: { fontSize: '2.2rem', backgroundColor: '#ffffff', padding: '4px 8px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
-  portalMainTitle: { margin: 0, fontSize: '1.4rem', fontWeight: '700', letterSpacing: '0.3px' },
-  portalSubtitleLabel: { margin: '2px 0 0 0', fontSize: '0.8rem', color: '#e2d3e4', fontWeight: '400' },
-  authControlContainer: { display: 'flex', alignItems: 'center' },
-  portalLoginButton: { padding: '8px 18px', backgroundColor: '#e01e5a', color: 'white', textDecoration: 'none', borderRadius: '4px', fontSize: '0.9rem', fontWeight: '600', transition: 'background-color 0.2s', boxShadow: '0 2px 4px rgba(224,30,90,0.3)', border: 'none', cursor: 'pointer' },
-  platformFooter: { backgroundColor: '#1e242e', padding: '12px 30px', color: '#a0aec0', fontSize: '0.8rem', textAlign: 'center', borderTop: '1px solid #2d3748' }
-};
 
 export default App;
