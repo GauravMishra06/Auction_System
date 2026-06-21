@@ -26,4 +26,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @EntityGraph(attributePaths = {"auction", "auction.item", "winner"})
     List<Order> findByWinnerUsername(String username);
+
+    @EntityGraph(attributePaths = {"auction", "auction.item", "winner"})
+    List<Order> findByAuctionSellerUsername(String username);
 }

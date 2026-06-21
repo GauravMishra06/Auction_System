@@ -11,6 +11,7 @@ public class OrderResponseDTO {
     private String itemName;
     private BigDecimal finalPrice;
     private String winnerUsername;
+    private String sellerUsername;
     private String paymentStatus;
     private LocalDateTime createdAt;
 }

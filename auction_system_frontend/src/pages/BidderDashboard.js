@@ -9,6 +9,56 @@ const BidderDashboard = () => {
   const [wonOrders, setWonOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    cardNumber: '',
+    expiry: '',
+    cvv: '',
+    billingAddress: ''
+  });
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [paymentSuccessMsg, setPaymentSuccessMsg] = useState('');
+
+  const handleOpenCheckout = (order) => {
+    setSelectedOrder(order);
+    setPaymentForm({ cardNumber: '', expiry: '', cvv: '', billingAddress: '' });
+    setPaymentError('');
+    setPaymentSuccessMsg('');
+    setShowModal(true);
+  };
+
+  const handleCloseCheckout = () => {
+    setShowModal(false);
+    setSelectedOrder(null);
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setPaymentForm({ ...paymentForm, [name]: value });
+  };
+
+  const handlePaySubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingPayment(true);
+    setPaymentError('');
+
+    try {
+      const headers = await getAuthorizedHeaders();
+      await axios.post(`${API_BASE_URL}/api/orders/${selectedOrder.orderId}/pay`, {}, { headers });
+      setWonOrders(prev => prev.map(o => o.orderId === selectedOrder.orderId ? { ...o, paymentStatus: 'PAID' } : o));
+      setPaymentSuccessMsg('Payment processed successfully! Your receipt has been generated.');
+      setTimeout(() => {
+        handleCloseCheckout();
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      setPaymentError(err.response?.data?.message || 'Failed to process payment. Please verify card details.');
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -88,6 +138,7 @@ const BidderDashboard = () => {
                   <th>Winning Bid</th>
                   <th>Status</th>
                   <th>Closed Date</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -102,6 +153,18 @@ const BidderDashboard = () => {
                       </span>
                     </td>
                     <td>{new Date(order.createdAt).toLocaleString()}</td>
+                    <td>
+                      {order.paymentStatus === 'PENDING' ? (
+                        <button 
+                          onClick={() => handleOpenCheckout(order)} 
+                          className="btn btn-primary btn-sm"
+                        >
+                          Pay Now
+                        </button>
+                      ) : (
+                        <span style={{ color: 'var(--color-success)', fontWeight: '600', fontSize: '0.85rem' }}>✓ Paid</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -145,6 +208,137 @@ const BidderDashboard = () => {
           </div>
         )}
       </div>
+      {showModal && selectedOrder && (
+        <div className="modal-overlay">
+          <div className="glass-card modal-card" style={{
+            width: '95%',
+            maxWidth: '500px',
+            position: 'relative',
+            backgroundColor: 'var(--color-white)',
+            border: '1px solid var(--color-primary-light)'
+          }}>
+            <button 
+              onClick={handleCloseCheckout} 
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                color: 'var(--color-gray)',
+                transition: 'color 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.color = 'var(--color-dark)'}
+              onMouseLeave={(e) => e.target.style.color = 'var(--color-gray)'}
+            >
+              &times;
+            </button>
+            <h3 className="section-title" style={{ borderBottom: '1px solid var(--color-gray-lighter)', paddingBottom: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-primary)' }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+              Secure Checkout
+            </h3>
+            
+            <div style={{ 
+              marginBottom: '20px', 
+              padding: '12px', 
+              backgroundColor: 'var(--color-gray-lightest)', 
+              borderRadius: 'var(--radius-sm)',
+              borderLeft: '4px solid var(--color-primary)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.9rem' }}>
+                <span style={{ fontWeight: '600' }}>Item:</span>
+                <span>{selectedOrder.itemName}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.9rem' }}>
+                <span style={{ fontWeight: '600' }}>Lot ID:</span>
+                <span>#{selectedOrder.auctionId}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-success)', fontWeight: 'bold' }}>
+                <span>Amount Due:</span>
+                <span>${selectedOrder.finalPrice.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {paymentSuccessMsg ? (
+              <div className="alert alert-success" style={{ margin: '20px 0' }}>
+                {paymentSuccessMsg}
+              </div>
+            ) : (
+              <form onSubmit={handlePaySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Card Number</label>
+                  <input
+                    type="text"
+                    name="cardNumber"
+                    value={paymentForm.cardNumber}
+                    onChange={handleFormChange}
+                    placeholder="1234 5678 1234 5678"
+                    pattern="[0-9]{13,19}"
+                    required
+                    className="form-input"
+                  />
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Expiry Date</label>
+                    <input
+                      type="text"
+                      name="expiry"
+                      value={paymentForm.expiry}
+                      onChange={handleFormChange}
+                      placeholder="MM/YY"
+                      pattern="(0[1-9]|1[0-2])\/[0-9]{2}"
+                      required
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">CVV</label>
+                    <input
+                      type="password"
+                      name="cvv"
+                      value={paymentForm.cvv}
+                      onChange={handleFormChange}
+                      placeholder="•••"
+                      pattern="[0-9]{3,4}"
+                      required
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Billing Address</label>
+                  <input
+                    type="text"
+                    name="billingAddress"
+                    value={paymentForm.billingAddress}
+                    onChange={handleFormChange}
+                    placeholder="e.g. 123 Luxury Lane, NY"
+                    required
+                    className="form-input"
+                  />
+                </div>
+
+                {paymentError && <div className="alert alert-danger" style={{ margin: '8px 0 0 0' }}>{paymentError}</div>}
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
+                  <button type="button" onClick={handleCloseCheckout} className="btn btn-secondary" disabled={submittingPayment}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={submittingPayment}>
+                    {submittingPayment ? 'Processing...' : `Pay $${selectedOrder.finalPrice.toFixed(2)}`}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

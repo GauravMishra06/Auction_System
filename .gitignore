@@ -1,0 +1,29 @@
+# =============================================================================
+# Root .gitignore for Auction System Monorepo
+# =============================================================================
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE and editor files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+*.zip
+*.tar.gz
+
+# Logs
+*.log
+
+# Node
+node_modules/

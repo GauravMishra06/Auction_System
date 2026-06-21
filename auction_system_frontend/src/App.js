@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { BackgroundManager } from './components/BackgroundManager';
+import GoldenSparkles from './components/GoldenSparkles';
 import HomePage from './pages/HomePage';
 import ActiveAuctions from './pages/ActiveAuctions';
 import AuctionDetails from './pages/AuctionDetails';
@@ -57,6 +58,7 @@ function AppContent() {
   return (
     <div className="app-root">
       <BackgroundManager />
+      <GoldenSparkles />
       
       {/* Top Header */}
       <header className="app-header">
@@ -66,7 +68,7 @@ function AppContent() {
               {sidebarOpen ? '✕' : '☰'}
             </button>
           )}
-          <Link to="/" className="header-logo">E-AUCTION</Link>
+          <Link to="/" className="header-logo">◆ E-AUCTION</Link>
           <div className="header-text">
             <p>Premium Electronic Auction Platform</p>
           </div>
@@ -147,7 +149,9 @@ function AppContent() {
       {/* Footer */}
       {!isAuthPage && (
         <footer className="app-footer">
-          eAuction — Secure Electronic Auction Platform v2.0
+          <div style={{ width: '40px', height: '1px', background: 'var(--color-primary)', margin: '0 auto 16px auto' }}></div>
+          <span style={{ display: 'block', marginBottom: '4px' }}>eAuction — Secure Electronic Auction Platform v2.0</span>
+          <span style={{ display: 'block', color: 'var(--color-gray)', fontSize: '0.65rem' }}>Curated Collections · Verified Sellers · Secure Payments</span>
         </footer>
       )}
     </div>

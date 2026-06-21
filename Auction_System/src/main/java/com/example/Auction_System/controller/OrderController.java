@@ -43,4 +43,16 @@ public class OrderController {
     public ResponseEntity<List<OrderResponseDTO>> getOrdersByWinner(@PathVariable String username) {
         return ResponseEntity.ok(orderService.getOrdersByWinnerUsername(username));
     }
+
+    @PostMapping("/{id}/pay")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<OrderResponseDTO> payOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.payOrder(id));
+    }
+
+    @GetMapping("/seller/{username}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AUCTIONEER')")
+    public ResponseEntity<List<OrderResponseDTO>> getOrdersBySeller(@PathVariable String username) {
+        return ResponseEntity.ok(orderService.getOrdersBySellerUsername(username));
+    }
 }

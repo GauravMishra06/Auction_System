@@ -26,6 +26,18 @@ yarn-error.log*
 .vscode/
 .idea/
 
+# unused CRA boilerplate (not part of the project)
+src/App.css
+src/App.test.js
+src/logo.svg
+src/reportWebVitals.js
+src/setupTests.js
+
+# duplicate / stale assets
+/resourses/
+src/pages/*.pdf
+
 # misc
 .cache
 .eslintcache
+

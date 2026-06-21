@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth, API_BASE_URL } from '../auth/auth';
+import SoldAnimation from '../components/SoldAnimation';
+import UnsoldAnimation from '../components/UnsoldAnimation';
+import WinnerCelebration from '../components/WinnerCelebration';
 
-const CountdownTimer = ({ endTime }) => {
+const CountdownTimer = ({ endTime, onExpired }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [isExpired, setIsExpired] = useState(false);
 
@@ -14,8 +17,11 @@ const CountdownTimer = ({ endTime }) => {
       const diff = end - now;
 
       if (diff <= 0) {
-        setIsExpired(true);
-        setTimeLeft('Auction Closed');
+        if (!isExpired) {
+          setIsExpired(true);
+          setTimeLeft('Auction Closed');
+          onExpired?.();
+        }
         return;
       }
 
@@ -33,7 +39,7 @@ const CountdownTimer = ({ endTime }) => {
     calculateTimeLeft();
     const interval = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(interval);
-  }, [endTime]);
+  }, [endTime, isExpired, onExpired]);
 
   return (
     <div 
@@ -65,12 +71,74 @@ const AuctionDetails = () => {
   const [statusMessage, setStatusMessage] = useState('');
   const [statusType, setStatusType] = useState('error');
 
+  // Animation states
+  const [showSold, setShowSold] = useState(false);
+  const [showUnsold, setShowUnsold] = useState(false);
+  const [showWinner, setShowWinner] = useState(false);
+  const [showBidFlash, setShowBidFlash] = useState(false);
+  const [showBidToast, setShowBidToast] = useState(false);
+  const animationShownRef = useRef(false);
+
   const loadData = useCallback(() => {
     axios.get(`${API_BASE_URL}/api/auctions/${id}`).then(res => setAuction(res.data)).catch(() => {});
     axios.get(`${API_BASE_URL}/api/bids/history/${id}`).then(res => setBidHistory(res.data)).catch(() => {});
   }, [id]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Trigger appropriate animation when auction is COMPLETED
+  useEffect(() => {
+    if (auction?.status === 'COMPLETED' && !animationShownRef.current && bidHistory !== null) {
+      animationShownRef.current = true;
+
+      const hasBids = bidHistory.length > 0;
+      const isCurrentUserWinner = hasBids && auth?.username && bidHistory[0]?.bidderUsername === auth.username;
+
+      const timer = setTimeout(() => {
+        if (!hasBids) {
+          // No bids were placed — show UNSOLD animation
+          setShowUnsold(true);
+        } else if (isCurrentUserWinner) {
+          // Current user is the winner — show Winner Celebration
+          setShowWinner(true);
+        } else {
+          // Auction sold to someone else — show SOLD stamp
+          setShowSold(true);
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [auction?.status, bidHistory, auth?.username]);
+
+  // Called when countdown reaches zero (live transition to COMPLETED)
+  const handleAuctionExpired = useCallback(() => {
+    if (!animationShownRef.current) {
+      // Reload first to get final bid data, then trigger animation
+      loadData();
+      // The animation will be triggered by the useEffect above
+      // once the reloaded data sets auction.status to COMPLETED
+    }
+  }, [loadData]);
+
+  const triggerBidCelebration = () => {
+    // 1. Flash effect
+    setShowBidFlash(true);
+    setTimeout(() => setShowBidFlash(false), 900);
+
+    // 2. Toast notification
+    setShowBidToast(true);
+    setTimeout(() => setShowBidToast(false), 3200);
+
+    // 3. Sparkle burst (from GoldenSparkles canvas)
+    if (window.triggerSparkBurst) {
+      window.triggerSparkBurst(window.innerWidth / 2, window.innerHeight / 2, 50);
+      // Extra bursts around the screen
+      setTimeout(() => {
+        window.triggerSparkBurst?.(window.innerWidth * 0.3, window.innerHeight * 0.4, 20);
+        window.triggerSparkBurst?.(window.innerWidth * 0.7, window.innerHeight * 0.4, 20);
+      }, 200);
+    }
+  };
 
   const executeBidSubmission = async (e) => {
     e.preventDefault();
@@ -98,6 +166,9 @@ const AuctionDetails = () => {
         setAuction({ ...auction, currentHighestBid: response.data.bidAmount });
         setBidHistory([response.data, ...bidHistory]);
         setBidAmount('');
+
+        // 🎉 Trigger celebration
+        triggerBidCelebration();
       })
       .catch(error => {
         setStatusMessage(error.response?.data?.message || 'Unable to place bid.');
@@ -116,16 +187,56 @@ const AuctionDetails = () => {
 
   return (
     <div className="page-container page-bg-details fade-in" style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
+      {/* SOLD Overlay Animation */}
+      <SoldAnimation
+        show={showSold}
+        onComplete={() => setShowSold(false)}
+        finalPrice={auction.currentHighestBid}
+        winnerName={bidHistory.length > 0 ? bidHistory[0]?.bidderUsername : null}
+      />
+
+      {/* UNSOLD Overlay — shown when auction closes with zero bids */}
+      <UnsoldAnimation
+        show={showUnsold}
+        onComplete={() => setShowUnsold(false)}
+        itemName={auction.itemName}
+      />
+
+      {/* Winner Celebration — shown to the winning bidder */}
+      <WinnerCelebration
+        show={showWinner}
+        onComplete={() => setShowWinner(false)}
+        itemName={auction.itemName}
+        finalPrice={auction.currentHighestBid}
+        username={auth?.username}
+      />
+
+      {/* Bid Success Flash */}
+      {showBidFlash && <div className="bid-success-flash" />}
+
+      {/* Bid Success Toast */}
+      {showBidToast && (
+        <div className="bid-success-toast">
+          ◆ Bid Placed Successfully ◆
+        </div>
+      )}
+
       {/* Left Column: Details */}
       <div style={{ flex: 2, minWidth: '320px' }}>
         <h1 className="page-title" style={{ fontSize: '2.5rem', marginBottom: 'var(--space-md)' }}>{auction.itemName}</h1>
         <div className="breadcrumb" style={{ borderBottom: 'none', marginBottom: '1.5rem', paddingBottom: 0 }}>Lot #{auction.auctionId} / {auction.category}</div>
         
-        <CountdownTimer endTime={auction.endTime} />
+        <CountdownTimer endTime={auction.endTime} onExpired={handleAuctionExpired} />
 
         {auction.imageUrl && (
-          <div className="glass-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--space-xl)', border: '1px solid var(--color-gray-lighter)' }}>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--space-xl)', border: '1px solid var(--color-gray-lighter)', position: 'relative' }}>
             <img src={auction.imageUrl} alt={auction.itemName} style={{ width: '100%', maxHeight: '450px', objectFit: 'contain', background: '#fcfbf9' }} />
+            {/* SOLD badge on image for completed auctions */}
+            {auction.status === 'COMPLETED' && (
+              <div className="gallery-card-sold-overlay">
+                <div className="gallery-card-sold-stamp">SOLD</div>
+              </div>
+            )}
           </div>
         )}
 
@@ -192,7 +303,7 @@ const AuctionDetails = () => {
 
       {/* Right Column: Bid History */}
       <div style={{ flex: 1, minWidth: '290px' }}>
-        <div className="glass-card" style={{ height: '100%', boxSizing: 'border-box' }}>
+        <div className="glass-card" style={{ height: '100%', boxSizing: 'border-box', borderTop: '2px solid var(--color-primary)' }}>
           <h3 className="section-title" style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-gray-lightest)', paddingBottom: '12px', marginBottom: '16px' }}>Bidding History ({bidHistory.length})</h3>
           <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
             {bidHistory.length === 0 ? (

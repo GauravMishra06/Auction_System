@@ -79,9 +79,12 @@ const HomePage = () => {
       {/* Hero Section */}
       <section style={{ padding: '4rem 0', marginBottom: '3rem', textAlign: 'center', borderBottom: '1px solid var(--color-gray-lighter)' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ margin: '0 0 1rem 0', fontSize: '3rem', fontWeight: '400', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}>
+          <h1 style={{ margin: '0 0 0 0', fontSize: '3rem', fontWeight: '400', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}>
             The Fine Art of Collecting
           </h1>
+          <div className="hero-divider">
+            <span className="hero-divider-diamond">◆</span>
+          </div>
           <p className="page-subtitle" style={{ fontSize: '1.1rem', fontStyle: 'italic', fontFamily: 'var(--font-serif)', lineHeight: '1.8', marginBottom: '2.5rem', color: 'var(--color-gray)' }}>
             Discover and bid on rare timepieces, modern art, and luxury collectibles.
             {auth?.token && ` Welcome back, ${auth.username}.`}

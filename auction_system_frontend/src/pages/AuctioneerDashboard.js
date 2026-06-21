@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 const AuctioneerDashboard = () => {
   const { auth, getAuthorizedHeaders } = useAuth();
   const [listings, setListings] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionStatus, setActionStatus] = useState('');
@@ -14,8 +15,12 @@ const AuctioneerDashboard = () => {
     try {
       setError('');
       const headers = await getAuthorizedHeaders();
-      const res = await axios.get(`${API_BASE_URL}/api/auctions/seller/${auth.username}`, { headers });
-      setListings(res.data);
+      const [listingsRes, ordersRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/auctions/seller/${auth.username}`, { headers }),
+        axios.get(`${API_BASE_URL}/api/orders/seller/${auth.username}`, { headers }).catch(() => ({ data: [] }))
+      ]);
+      setListings(listingsRes.data);
+      setOrders(ordersRes.data);
     } catch (err) {
       console.error(err);
       setError('Failed to fetch your listings. Please refresh.');
@@ -129,6 +134,46 @@ const AuctioneerDashboard = () => {
                           </button>
                         )}
                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+ 
+      <div style={{ marginBottom: 'var(--space-xl)' }}>
+        <h3 className="section-title">Orders Received / Sales Log</h3>
+        {orders.length === 0 ? (
+          <div className="empty-state">
+            <p>No orders have been received yet for your listings.</p>
+          </div>
+        ) : (
+          <div className="data-table-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Item Name</th>
+                  <th>Buyer</th>
+                  <th>Amount</th>
+                  <th>Date Sold</th>
+                  <th>Payment Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.orderId}>
+                    <td>#{order.orderId}</td>
+                    <td style={{ fontWeight: 'bold' }}>{order.itemName}</td>
+                    <td>{order.winnerUsername}</td>
+                    <td style={{ color: 'var(--color-success)', fontWeight: 'bold' }}>${order.finalPrice.toFixed(2)}</td>
+                    <td>{new Date(order.createdAt).toLocaleString()}</td>
+                    <td>
+                      <span className={`badge ${order.paymentStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}`}>
+                        {order.paymentStatus}
+                      </span>
                     </td>
                   </tr>
                 ))}

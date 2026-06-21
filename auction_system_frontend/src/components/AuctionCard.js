@@ -35,7 +35,7 @@ const AuctionCard = ({ auction }) => {
   };
 
   return (
-    <Link to={`/auctions/${auction.auctionId}`} className="gallery-card">
+    <Link to={`/auctions/${auction.auctionId}`} className="gallery-card stagger-item">
       <div className="gallery-card-img-container">
         {auction.imageUrl ? (
           <img
@@ -59,6 +59,12 @@ const AuctionCard = ({ auction }) => {
         <span className={`badge ${getStatusBadge(auction.status)} gallery-card-status`}>
           {auction.status}
         </span>
+        {/* SOLD stamp overlay for completed auctions */}
+        {auction.status === 'COMPLETED' && (
+          <div className="gallery-card-sold-overlay">
+            <div className="gallery-card-sold-stamp">SOLD</div>
+          </div>
+        )}
       </div>
       <div className="gallery-card-content">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>

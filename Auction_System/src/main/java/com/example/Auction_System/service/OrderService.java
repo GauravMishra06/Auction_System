@@ -3,6 +3,7 @@ package com.example.Auction_System.service;
 import com.example.Auction_System.dto.OrderResponseDTO;
 import com.example.Auction_System.exception.BusinessRuleException;
 import com.example.Auction_System.exception.ResourceNotFoundException;
+import com.example.Auction_System.exception.AuthorizationException;
 import com.example.Auction_System.models.Auction;
 import com.example.Auction_System.models.Bid;
 import com.example.Auction_System.models.Order;
@@ -106,6 +107,34 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<OrderResponseDTO> getOrdersBySellerUsername(String username) {
+        List<Order> orders = orderRepository.findByAuctionSellerUsername(username);
+        return orders.stream()
+                .map(this::convertToOrderDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public OrderResponseDTO payOrder(Long id) {
+        String currentUsername = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
+
+        if (order.getWinner() == null || !order.getWinner().getUsername().equals(currentUsername)) {
+            throw new AuthorizationException("You are not authorized to pay for this order.");
+        }
+
+        if (order.getPaymentStatus() != OrderStatus.PENDING) {
+            throw new BusinessRuleException("Only pending orders can be paid. Current status: " + order.getPaymentStatus());
+        }
+
+        order.setPaymentStatus(OrderStatus.PAID);
+        Order saved = orderRepository.save(order);
+        log.info("Order #{} paid successfully by winner '{}'", id, currentUsername);
+        return convertToOrderDTO(saved);
+    }
+
     /**
      * Shared private conversion utility mapping Order entity to outbound DTO.
      */
@@ -116,6 +145,7 @@ public class OrderService {
         dto.setItemName(order.getAuction().getItem().getName());
         dto.setFinalPrice(order.getFinalPrice());
         dto.setWinnerUsername(order.getWinner() != null ? order.getWinner().getUsername() : "NO BIDS");
+        dto.setSellerUsername(order.getAuction().getSeller() != null ? order.getAuction().getSeller().getUsername() : null);
         dto.setPaymentStatus(order.getPaymentStatus().name());
         dto.setCreatedAt(order.getCreatedAt());
         return dto;
