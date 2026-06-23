@@ -77,15 +77,25 @@ const HomePage = () => {
   return (
     <div className="page-container page-bg-home fade-in">
       {/* Hero Section */}
-      <section style={{ padding: '4rem 0', marginBottom: '3rem', textAlign: 'center', borderBottom: '1px solid var(--color-gray-lighter)' }}>
+      <section style={{
+        padding: '6rem 2rem',
+        marginBottom: '4rem',
+        textAlign: 'center',
+        background: 'linear-gradient(145deg, rgba(20, 20, 20, 0.8), rgba(0, 0, 0, 0.5))',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: '8px',
+        border: '1px solid rgba(181, 148, 91, 0.6)',
+        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)'
+      }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ margin: '0 0 0 0', fontSize: '3rem', fontWeight: '400', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}>
+          <h1 style={{ margin: '0 0 0 0', fontSize: '3.5rem', fontWeight: '400', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', color: 'var(--color-primary-light)', textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
             The Fine Art of Collecting
           </h1>
-          <div className="hero-divider">
-            <span className="hero-divider-diamond">◆</span>
+          <div className="hero-divider" style={{ margin: '1.5rem 0' }}>
+            <span className="hero-divider-diamond" style={{ color: 'var(--color-primary)' }}>◆</span>
           </div>
-          <p className="page-subtitle" style={{ fontSize: '1.1rem', fontStyle: 'italic', fontFamily: 'var(--font-serif)', lineHeight: '1.8', marginBottom: '2.5rem', color: 'var(--color-gray)' }}>
+          <p className="page-subtitle" style={{ fontSize: '1.25rem', fontStyle: 'italic', fontFamily: 'var(--font-serif)', lineHeight: '1.8', marginBottom: '3rem', color: 'rgba(255, 255, 255, 0.9)', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
             Discover and bid on rare timepieces, modern art, and luxury collectibles.
             {auth?.token && ` Welcome back, ${auth.username}.`}
           </p>
@@ -93,13 +103,13 @@ const HomePage = () => {
             {!auth?.token ? (
               <>
                 <Link to="/signin" className="btn btn-primary btn-lg">Sign In</Link>
-                <Link to="/register" className="btn btn-ghost btn-lg">Create Account</Link>
+                <Link to="/register" className="btn btn-ghost btn-lg" style={{ color: 'var(--color-white)', border: '1px solid var(--color-white)' }}>Create Account</Link>
               </>
             ) : (
               <>
                 <Link to="/auctions" className="btn btn-primary btn-lg">Explore Collections</Link>
                 {auth.role === 'ROLE_AUCTIONEER' && (
-                  <Link to="/create-auction" className="btn btn-secondary btn-lg">List An Item</Link>
+                  <Link to="/create-auction" className="btn btn-secondary btn-lg" style={{ background: 'transparent', color: 'var(--color-white)', border: '1px solid var(--color-primary)' }}>List An Item</Link>
                 )}
               </>
             )}
@@ -125,8 +135,8 @@ const HomePage = () => {
 
       {/* Featured Auctions (Active) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2rem' }}>
-        <h2 className="section-title" style={{ fontSize: '2rem', margin: 0 }}>Current Exhibitions</h2>
-        <Link to="/auctions" style={{ color: 'var(--color-primary-dark)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.1em' }}>View Full Catalogue →</Link>
+        <h2 className="section-title" style={{ fontSize: '2rem', margin: 0, color: 'rgba(255, 255, 255, 0.95)', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>Current Exhibitions</h2>
+        <Link to="/auctions" style={{ color: 'var(--color-primary-light)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.1em' }}>View Full Catalogue →</Link>
       </div>
 
       {auctions.length === 0 ? (
@@ -148,9 +158,9 @@ const HomePage = () => {
       )}
 
       {/* Completed Auctions (Past) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '5rem', marginBottom: '2rem', borderTop: '1px solid var(--color-gray-lighter)', paddingTop: '3rem' }}>
-        <h2 className="section-title" style={{ fontSize: '2rem', margin: 0 }}>Past Catalogue / Completed Lots</h2>
-        <span style={{ color: 'var(--color-gray-light)', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Closed Auctions</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '5rem', marginBottom: '2rem', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '3rem' }}>
+        <h2 className="section-title" style={{ fontSize: '2rem', margin: 0, color: 'rgba(255, 255, 255, 0.95)', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>Past Catalogue / Completed Lots</h2>
+        <span style={{ color: 'var(--color-primary-light)', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Closed Auctions</span>
       </div>
 
       {completedAuctions.length === 0 ? (

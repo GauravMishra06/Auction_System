@@ -56,11 +56,11 @@ const icons = {
 };
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { auth, logout } = useAuth();
+  const { auth, logoutSession } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    logoutSession();
     if (onClose) onClose();
     navigate('/');
   };

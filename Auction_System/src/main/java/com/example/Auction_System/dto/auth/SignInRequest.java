@@ -12,8 +12,5 @@ public class SignInRequest {
     private String password;
 
     @NotBlank
-    private String captchaId;
-
-    @NotBlank
-    private String captchaAnswer;
+    private String recaptchaToken;
 }

@@ -1,7 +1,7 @@
 package com.example.Auction_System.controller;
 
 import com.example.Auction_System.dto.auth.AuthResponse;
-import com.example.Auction_System.dto.auth.CaptchaChallengeResponse;
+// Import removed
 import com.example.Auction_System.dto.auth.ForgotPasswordRequest;
 import com.example.Auction_System.dto.auth.MessageResponse;
 import com.example.Auction_System.dto.auth.RefreshTokenRequest;
@@ -36,10 +36,7 @@ public class AuthController {
         this.rateLimitService = rateLimitService;
     }
 
-    @GetMapping("/captcha")
-    public ResponseEntity<CaptchaChallengeResponse> captcha() {
-        return ResponseEntity.ok(captchaService.createChallenge());
-    }
+    // Captcha generation removed as we use Google reCAPTCHA
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> signUp(@Valid @RequestBody SignUpRequest request, HttpServletRequest httpRequest) {

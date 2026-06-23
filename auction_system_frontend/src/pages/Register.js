@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, API_BASE_URL } from '../auth/auth';
+import ReCAPTCHA from "react-google-recaptcha";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -11,25 +12,9 @@ const Register = () => {
     email: '',
     password: '',
     role: 'ROLE_BIDDER',
-    captchaId: '',
-    captchaAnswer: ''
+    recaptchaToken: ''
   });
-  const [captchaHint, setCaptchaHint] = useState('');
   const [status, setStatus] = useState({ success: false, message: '' });
-
-  const loadCaptcha = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/api/auth/captcha`);
-      setCaptchaHint(res.data.challengeHint);
-      setFormData((prev) => ({ ...prev, captchaId: res.data.challengeId, captchaAnswer: '' }));
-    } catch {
-      setStatus({ success: false, message: 'Unable to load captcha.' });
-    }
-  };
-
-  useEffect(() => {
-    loadCaptcha();
-  }, []);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -49,7 +34,6 @@ const Register = () => {
       else navigate('/dashboard/bidder');
     } catch (err) {
       setStatus({ success: false, message: err.response?.data?.message || 'Registration failed.' });
-      await loadCaptcha();
     }
   };
 
@@ -85,14 +69,11 @@ const Register = () => {
             </select>
           </div>
 
-          <div className="captcha-box">
-            <div className="captcha-display">{captchaHint || 'Loading...'}</div>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={loadCaptcha} style={{ height: '100%', padding: '12px' }}>Refresh</button>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Captcha Answer</label>
-            <input type="text" name="captchaAnswer" value={formData.captchaAnswer} onChange={handleInputChange} required placeholder="Type the characters without spaces" className="form-input" />
+          <div className="form-group" style={{ display: 'flex', justifyContent: 'center', margin: '1rem 0' }}>
+            <ReCAPTCHA
+              sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+              onChange={(token) => setFormData({ ...formData, recaptchaToken: token })}
+            />
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '0.5rem' }}>

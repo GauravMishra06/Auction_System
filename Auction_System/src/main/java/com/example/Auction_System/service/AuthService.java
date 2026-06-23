@@ -53,7 +53,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse signUp(SignUpRequest request) {
-        captchaService.verifyOrThrow(request.getCaptchaId(), request.getCaptchaAnswer());
+        captchaService.verifyRecaptcha(request.getRecaptchaToken());
 
         // Block self-assignment of ADMIN role during public sign-up
         if (request.getRole() == Role.ROLE_ADMIN) {
@@ -88,7 +88,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse signIn(SignInRequest request) {
-        captchaService.verifyOrThrow(request.getCaptchaId(), request.getCaptchaAnswer());
+        captchaService.verifyRecaptcha(request.getRecaptchaToken());
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())

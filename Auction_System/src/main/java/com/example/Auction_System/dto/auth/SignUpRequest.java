@@ -25,8 +25,5 @@ public class SignUpRequest {
     private Role role;
 
     @NotBlank
-    private String captchaId;
-
-    @NotBlank
-    private String captchaAnswer;
+    private String recaptchaToken;
 }

@@ -231,10 +231,12 @@ const AuctionDetails = () => {
         {auction.imageUrl && (
           <div className="glass-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--space-xl)', border: '1px solid var(--color-gray-lighter)', position: 'relative' }}>
             <img src={auction.imageUrl} alt={auction.itemName} style={{ width: '100%', maxHeight: '450px', objectFit: 'contain', background: '#fcfbf9' }} />
-            {/* SOLD badge on image for completed auctions */}
+            {/* SOLD / UNSOLD badge on image for completed auctions */}
             {auction.status === 'COMPLETED' && (
               <div className="gallery-card-sold-overlay">
-                <div className="gallery-card-sold-stamp">SOLD</div>
+                <div className="gallery-card-sold-stamp">
+                  {bidHistory.length > 0 ? 'SOLD' : 'UNSOLD'}
+                </div>
               </div>
             )}
           </div>

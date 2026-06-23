@@ -59,10 +59,12 @@ const AuctionCard = ({ auction }) => {
         <span className={`badge ${getStatusBadge(auction.status)} gallery-card-status`}>
           {auction.status}
         </span>
-        {/* SOLD stamp overlay for completed auctions */}
+        {/* SOLD / UNSOLD stamp overlay for completed auctions */}
         {auction.status === 'COMPLETED' && (
           <div className="gallery-card-sold-overlay">
-            <div className="gallery-card-sold-stamp">SOLD</div>
+            <div className="gallery-card-sold-stamp">
+              {auction.bidCount > 0 ? 'SOLD' : 'UNSOLD'}
+            </div>
           </div>
         )}
       </div>
@@ -71,7 +73,7 @@ const AuctionCard = ({ auction }) => {
           {auction.category && (
             <span className="gallery-card-category" style={{ marginBottom: 0 }}>{auction.category}</span>
           )}
-          <span className="gallery-card-category" style={{ marginBottom: 0, color: 'var(--color-gray-light)', fontWeight: 'normal' }}>
+          <span className="gallery-card-category" style={{ marginBottom: 0, color: 'rgba(255, 255, 255, 0.6)', fontWeight: 'normal' }}>
             Lot #{auction.auctionId}
           </span>
         </div>
@@ -83,16 +85,16 @@ const AuctionCard = ({ auction }) => {
           flexDirection: 'column', 
           gap: '4px', 
           fontSize: '0.75rem', 
-          color: 'var(--color-gray)', 
+          color: 'rgba(255, 255, 255, 0.7)', 
           marginBottom: '14px',
-          borderTop: '1px dashed var(--color-gray-lighter)',
+          borderTop: '1px dashed rgba(255, 255, 255, 0.2)',
           paddingTop: '8px'
         }}>
           <div>
-            <span style={{ fontWeight: '600', color: 'var(--color-dark-light)' }}>Published:</span> {formatDate(auction.startTime)}
+            <span style={{ fontWeight: '600', color: 'var(--color-primary-light)' }}>Published:</span> {formatDate(auction.startTime)}
           </div>
           <div>
-            <span style={{ fontWeight: '600', color: 'var(--color-dark-light)' }}>Ending:</span> {formatDate(auction.endTime)}
+            <span style={{ fontWeight: '600', color: 'var(--color-primary-light)' }}>Ending:</span> {formatDate(auction.endTime)}
           </div>
         </div>
 
