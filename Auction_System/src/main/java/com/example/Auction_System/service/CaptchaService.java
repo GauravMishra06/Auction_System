@@ -33,6 +33,7 @@ public class CaptchaService {
         requestMap.add("response", recaptchaToken);
 
         try {
+            @SuppressWarnings("unchecked")
             Map<String, Object> apiResponse = restTemplate.postForObject(verifyUrl, requestMap, Map.class);
             
             if (apiResponse == null || !Boolean.TRUE.equals(apiResponse.get("success"))) {

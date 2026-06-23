@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
         error.put("timestamp", LocalDateTime.now().toString());
         error.put("status", 422);
         error.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+        return ResponseEntity.status(HttpStatus.valueOf(422)).body(error);
     }
 
     @ExceptionHandler(AuthorizationException.class)

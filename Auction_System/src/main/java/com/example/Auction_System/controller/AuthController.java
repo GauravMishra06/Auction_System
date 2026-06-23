@@ -14,7 +14,7 @@ import com.example.Auction_System.service.RateLimitService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,12 +27,10 @@ import jakarta.servlet.http.HttpServletRequest;
 public class AuthController {
 
     private final AuthService authService;
-    private final CaptchaService captchaService;
     private final RateLimitService rateLimitService;
 
-    public AuthController(AuthService authService, CaptchaService captchaService, RateLimitService rateLimitService) {
+    public AuthController(AuthService authService, RateLimitService rateLimitService) {
         this.authService = authService;
-        this.captchaService = captchaService;
         this.rateLimitService = rateLimitService;
     }
 

@@ -5,8 +5,7 @@ import com.example.Auction_System.exception.ResourceNotFoundException;
 import com.example.Auction_System.models.PasswordResetToken;
 import com.example.Auction_System.models.User;
 import com.example.Auction_System.repository.PasswordResetTokenRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +16,6 @@ import java.util.UUID;
 @Service
 public class PasswordResetService {
 
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
 
     @Value("${app.password-reset.expiration-minutes:30}")
     private long expirationMinutes;
