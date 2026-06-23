@@ -243,15 +243,15 @@ const AuctionDetails = () => {
         )}
 
         <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
-          <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-gray-lightest)', paddingBottom: '8px', marginBottom: '16px' }}>Description & Provenance</h3>
-          <p style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'var(--color-dark-light)', margin: '0 0 var(--space-xl) 0' }}>
+          <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '8px', marginBottom: '16px' }}>Description & Provenance</h3>
+          <p style={{ fontSize: '0.95rem', lineHeight: '1.8', color: 'rgba(255, 255, 255, 0.85)', margin: '0 0 var(--space-xl) 0' }}>
             {auction.itemDescription}
           </p>
 
           <div className="stats-grid" style={{ marginBottom: 'var(--space-lg)', gridTemplateColumns: 'repeat(2, 1fr)' }}>
             <div className="stat-card" style={{ borderTopColor: 'var(--color-primary)' }}>
               <span className="stat-label">Current Valuation</span>
-              <span className="stat-value" style={{ color: 'var(--color-primary-dark)' }}>${auction.currentHighestBid?.toFixed(2)}</span>
+              <span className="stat-value" style={{ color: 'var(--color-primary-light)' }}>${auction.currentHighestBid?.toFixed(2)}</span>
             </div>
             <div className="stat-card" style={{ borderTopColor: 'var(--color-gray)' }}>
               <span className="stat-label">Start Price</span>
@@ -259,7 +259,7 @@ const AuctionDetails = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', fontSize: '0.85rem', color: 'var(--color-gray)', textTransform: 'uppercase', letterSpacing: '0.05em', borderTop: '1px solid var(--color-gray-lightest)', paddingTop: '16px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', textTransform: 'uppercase', letterSpacing: '0.05em', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '16px' }}>
             <span><strong>Seller:</strong> {auction.sellerUsername}</span>
             <span><strong>Closing:</strong> {new Date(auction.endTime).toLocaleString()}</span>
             <span><strong>Status:</strong>{' '}
@@ -306,7 +306,7 @@ const AuctionDetails = () => {
       {/* Right Column: Bid History */}
       <div style={{ flex: 1, minWidth: '290px' }}>
         <div className="glass-card" style={{ height: '100%', boxSizing: 'border-box', borderTop: '2px solid var(--color-primary)' }}>
-          <h3 className="section-title" style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-gray-lightest)', paddingBottom: '12px', marginBottom: '16px' }}>Bidding History ({bidHistory.length})</h3>
+          <h3 className="section-title" style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px', marginBottom: '16px' }}>Bidding History ({bidHistory.length})</h3>
           <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
             {bidHistory.length === 0 ? (
               <p style={{ color: 'var(--color-gray-light)', textAlign: 'center', padding: 'var(--space-xl) 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
@@ -316,13 +316,13 @@ const AuctionDetails = () => {
               bidHistory.map((log) => (
                 <div key={log.bidId} style={{
                   padding: '14px 0',
-                  borderBottom: '1px solid var(--color-gray-lightest)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'baseline'
                 }}>
                   <div>
-                    <strong style={{ color: 'var(--color-dark)', fontSize: '0.9rem' }}>{log.bidderUsername}</strong>
+                    <strong style={{ color: 'var(--color-white)', fontSize: '0.9rem' }}>{log.bidderUsername}</strong>
                     <div style={{ fontSize: '0.7rem', color: 'var(--color-gray-light)', marginTop: '4px' }}>
                       {new Date(log.bidTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — {new Date(log.bidTime).toLocaleDateString()}
                     </div>
