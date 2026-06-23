@@ -9,7 +9,7 @@ import com.example.Auction_System.dto.auth.ResetPasswordRequest;
 import com.example.Auction_System.dto.auth.SignInRequest;
 import com.example.Auction_System.dto.auth.SignUpRequest;
 import com.example.Auction_System.service.AuthService;
-import com.example.Auction_System.service.CaptchaService;
+
 import com.example.Auction_System.service.RateLimitService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

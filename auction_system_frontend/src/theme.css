@@ -867,19 +867,7 @@ th {
   align-items: center;
 }
 
-.captcha-display {
-  flex: 1;
-  letter-spacing: 8px;
-  font-family: var(--font-mono);
-  text-align: center;
-  user-select: none;
-  font-size: 1.1rem;
-  padding: 12px;
-  border: 1px dashed var(--color-primary);
-  background: var(--color-gray-lightest);
-  font-weight: 700;
-  color: var(--color-dark);
-}
+
 
 /* ============================================
    Filter and Search layouts
