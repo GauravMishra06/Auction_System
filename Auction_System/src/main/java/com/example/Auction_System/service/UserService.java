@@ -3,21 +3,32 @@ package com.example.Auction_System.service;
 import com.example.Auction_System.dto.UserDTO;
 import com.example.Auction_System.exception.BusinessRuleException;
 import com.example.Auction_System.exception.ResourceNotFoundException;
+import com.example.Auction_System.models.Auction;
+import com.example.Auction_System.models.Order;
 import com.example.Auction_System.models.User;
+import com.example.Auction_System.repository.AuctionRepository;
+import com.example.Auction_System.repository.OrderRepository;
 import com.example.Auction_System.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final OrderRepository orderRepository;
+    private final AuctionRepository auctionRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                       OrderRepository orderRepository, AuctionRepository auctionRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.orderRepository = orderRepository;
+        this.auctionRepository = auctionRepository;
     }
 
     public UserDTO registerUser(User user) {
@@ -45,11 +56,23 @@ public class UserService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("User not found with ID: " + id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+        
+        // Safely delete any orders connected to this user's auctions first
+        List<Auction> sellerAuctions = auctionRepository.findBySellerId(id);
+        for (Auction auction : sellerAuctions) {
+            orderRepository.findByAuctionId(auction.getId()).ifPresent(orderRepository::delete);
         }
-        userRepository.deleteById(id);
+
+        // Safely delete any orders this user has won
+        List<Order> wonOrders = orderRepository.findByWinnerUsername(user.getUsername());
+        orderRepository.deleteAll(wonOrders);
+
+        // Now JPA can safely cascade to auctions, bids, and items without hitting Order FK issues
+        userRepository.delete(user);
     }
 
     private UserDTO convertToDTO(User user) {

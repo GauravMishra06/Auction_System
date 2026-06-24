@@ -52,4 +52,7 @@ public class Auction {
 
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Bid> bids;
+
+    @OneToOne(mappedBy = "auction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Order order;
 }
