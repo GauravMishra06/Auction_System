@@ -32,10 +32,7 @@ public class Order {
     @JoinColumn (name = "auction_id", nullable = false)
     private Auction auction;
 
-    /**
-     * nullable = true because an auction could close with zero bids,
-     * meaning no winner is assigned to the generated order row.
-     */
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "winner_id", nullable = true)
     private User winner;

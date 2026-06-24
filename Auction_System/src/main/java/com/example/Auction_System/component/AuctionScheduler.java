@@ -31,9 +31,7 @@ public class AuctionScheduler {
         this.passwordResetService = passwordResetService;
     }
 
-    /**
-     * Checks and closes expired auctions every 60 seconds.
-     */
+    
     @Scheduled(fixedRate = 60000)
     public void checkAndCloseExpiredAuctions() {
         List<Auction> expiredAuctions = auctionRepository.findByStatusAndEndTimeBefore(
@@ -54,10 +52,7 @@ public class AuctionScheduler {
         }
     }
 
-    /**
-     * Purges expired/used refresh tokens and password reset tokens every hour
-     * to prevent unbounded database table growth.
-     */
+    
     @Scheduled(fixedRate = 3600000)
     public void purgeExpiredTokens() {
         try {

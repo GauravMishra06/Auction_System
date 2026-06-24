@@ -8,5 +8,5 @@ import java.util.List;
 @Repository
 public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findByCategory(String category);
-    List<Item> findByNameContainingIgnoreCase(String keyword); // Simple case-insensitive search engine support
+    List<Item> findByNameContainingIgnoreCase(String keyword); 
 }

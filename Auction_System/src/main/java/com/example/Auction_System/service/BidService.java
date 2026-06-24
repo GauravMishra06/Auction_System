@@ -41,27 +41,27 @@ public class BidService {
         Auction auction = auctionRepository.findById(request.getAuctionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + request.getAuctionId()));
 
-        // Validation Rule: Reject entries if timeline is closed or deactivated
+        
         if (auction.getStatus() != AuctionStatus.ACTIVE) {
             throw new BusinessRuleException("This auction is no longer active.");
         }
 
-        // Validation Rule: Check if auction end time has passed
+        
         if (auction.getEndTime().isBefore(java.time.LocalDateTime.now())) {
             throw new BusinessRuleException("This auction has expired.");
         }
 
-        // Validation Rule: Incoming price check. Reject bids that are too low.
+        
         if (request.getBidAmount().compareTo(auction.getCurrentHighestBid()) <= 0) {
             throw new BusinessRuleException("Bid amount must be greater than the current highest bid of $" + auction.getCurrentHighestBid());
         }
 
-        // Extract bidder identity from JWT token — never trust client-provided IDs
+        
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User bidder = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + currentUsername));
 
-        // Validation Rule: Seller cannot bid on their own auction (fraud prevention)
+        
         if (auction.getSeller().getId().equals(bidder.getId())) {
             throw new AuthorizationException("You cannot bid on your own auction.");
         }
@@ -72,8 +72,8 @@ public class BidService {
         bid.setBidAmount(request.getBidAmount());
         Bid savedBid = bidRepository.save(bid);
 
-        // Synchronize state: Update the highest bid pointer to lock in the new price
-        // Optimistic locking via @Version will throw if another bid was placed concurrently
+        
+        
         auction.setCurrentHighestBid(request.getBidAmount());
         auctionRepository.save(auction);
 
@@ -88,9 +88,7 @@ public class BidService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Returns all bids placed by the currently authenticated user.
-     */
+    
     @Transactional(readOnly = true)
     public List<BidResponseDTO> getMyBids() {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();

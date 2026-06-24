@@ -35,9 +35,7 @@ public class OrderService {
         this.bidRepository = bidRepository;
     }
 
-    /**
-     * Core fulfillment logic to process the closeout of an active auction window.
-     */
+    
     @Transactional
     public OrderResponseDTO createOrderForCompletedAuction(Long auctionId) {
         Auction auction = auctionRepository.findById(auctionId)
@@ -47,24 +45,24 @@ public class OrderService {
             throw new BusinessRuleException("Cannot close an auction that is not active.");
         }
 
-        // Change status to prevent users from trying to place final bids during calculation
+        
         auction.setStatus(AuctionStatus.COMPLETED);
         auctionRepository.save(auction);
 
-        // Pull listing history arrays to isolate the winning entry
+        
         List<Bid> bids = bidRepository.findByAuctionIdOrderByBidAmountDesc(auctionId);
 
         Order order = new Order();
         order.setAuction(auction);
 
         if (bids.isEmpty()) {
-            // No bids were placed on the item before expiration
+            
             order.setWinner(null);
             order.setFinalPrice(auction.getStartPrice());
             order.setPaymentStatus(OrderStatus.FAILED);
             log.info("Auction #{} closed with no bids", auctionId);
         } else {
-            // Highest bid is at index 0 (ordered by bid_amount DESC)
+            
             Bid winningBid = bids.get(0);
             order.setWinner(winningBid.getBidder());
             order.setFinalPrice(winningBid.getBidAmount());
@@ -76,9 +74,7 @@ public class OrderService {
         return convertToOrderDTO(savedOrder);
     }
 
-    /**
-     * Lookup an invoice record by its primary key ID.
-     */
+    
     @Transactional(readOnly = true)
     public OrderResponseDTO getOrderById(Long id) {
         Order order = orderRepository.findById(id)
@@ -86,9 +82,7 @@ public class OrderService {
         return convertToOrderDTO(order);
     }
 
-    /**
-     * Find a settled invoice linked directly to a target auction.
-     */
+    
     @Transactional(readOnly = true)
     public OrderResponseDTO getOrderByAuctionId(Long auctionId) {
         Order order = orderRepository.findByAuctionId(auctionId)
@@ -96,9 +90,7 @@ public class OrderService {
         return convertToOrderDTO(order);
     }
 
-    /**
-     * Compiles all orders won by a specific user.
-     */
+    
     @Transactional(readOnly = true)
     public List<OrderResponseDTO> getOrdersByWinnerUsername(String username) {
         List<Order> orders = orderRepository.findByWinnerUsername(username);
@@ -135,9 +127,7 @@ public class OrderService {
         return convertToOrderDTO(saved);
     }
 
-    /**
-     * Shared private conversion utility mapping Order entity to outbound DTO.
-     */
+    
     private OrderResponseDTO convertToOrderDTO(Order order) {
         OrderResponseDTO dto = new OrderResponseDTO();
         dto.setOrderId(order.getId());

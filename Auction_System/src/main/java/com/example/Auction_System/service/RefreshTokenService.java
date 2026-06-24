@@ -72,9 +72,7 @@ public class RefreshTokenService {
         return refreshToken;
     }
 
-    /**
-     * Purges expired/revoked tokens from the database to prevent unbounded table growth.
-     */
+    
     @Transactional
     public int purgeExpiredTokens() {
         var expired = refreshTokenRepository.findAll().stream()

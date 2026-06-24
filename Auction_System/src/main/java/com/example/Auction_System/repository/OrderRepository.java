@@ -13,17 +13,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {"auction", "auction.item", "winner"})
     Optional<Order> findById(Long id);
 
-    /**
-     * Finds the settled invoice summary linked directly to a target auction tracker.
-     * Maps to: orderRepository.findByAuctionId(auctionId)
-     */
+    
     @EntityGraph(attributePaths = {"auction", "auction.item", "winner"})
     Optional<Order> findByAuctionId(Long auctionId);
 
-    /**
-     * Traverses the 'winner' relationship property to filter by the associated User's username string.
-     * Maps to: orderRepository.findByWinnerUsername(username)
-     */
+    
     @EntityGraph(attributePaths = {"auction", "auction.item", "winner"})
     List<Order> findByWinnerUsername(String username);
 

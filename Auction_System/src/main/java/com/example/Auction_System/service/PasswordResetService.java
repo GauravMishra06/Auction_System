@@ -74,9 +74,7 @@ public class PasswordResetService {
         passwordResetTokenRepository.save(token);
     }
 
-    /**
-     * Purges expired tokens from the database to prevent unbounded table growth.
-     */
+    
     @Transactional
     public int purgeExpiredTokens() {
         var expired = passwordResetTokenRepository.findAll().stream()

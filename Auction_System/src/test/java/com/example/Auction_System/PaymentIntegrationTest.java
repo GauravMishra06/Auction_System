@@ -42,7 +42,7 @@ public class PaymentIntegrationTest {
 
     @Test
     public void testPaymentProcessingAndSellerVisibility() {
-        // 1. Create and save seller
+        
         User seller = new User();
         seller.setUsername("test_seller_user");
         seller.setEmail("seller@example.com");
@@ -50,7 +50,7 @@ public class PaymentIntegrationTest {
         seller.setRole(Role.ROLE_AUCTIONEER);
         seller = userRepository.save(seller);
 
-        // 2. Create and save bidder
+        
         User bidder = new User();
         bidder.setUsername("test_bidder_user");
         bidder.setEmail("bidder@example.com");
@@ -58,13 +58,13 @@ public class PaymentIntegrationTest {
         bidder.setRole(Role.ROLE_BIDDER);
         bidder = userRepository.save(bidder);
 
-        // 3. Create and save item
+        
         Item item = new Item();
         item.setName("Collectible Painting");
         item.setDescription("Rare oil painting");
         item.setCategory("Art");
 
-        // 4. Create and save completed auction
+        
         Auction auction = new Auction();
         auction.setItem(item);
         auction.setSeller(seller);
@@ -75,14 +75,14 @@ public class PaymentIntegrationTest {
         auction.setStatus(AuctionStatus.COMPLETED);
         auction = auctionRepository.save(auction);
 
-        // 5. Create and save winning bid
+        
         Bid bid = new Bid();
         bid.setAuction(auction);
         bid.setBidder(bidder);
         bid.setBidAmount(new BigDecimal("150.00"));
         bid = bidRepository.save(bid);
 
-        // 6. Create and save pending order
+        
         Order order = new Order();
         order.setAuction(auction);
         order.setWinner(bidder);
@@ -91,20 +91,20 @@ public class PaymentIntegrationTest {
         order = orderRepository.save(order);
         final Long orderId = order.getId();
 
-        // Set Security Context Authentication as the winning bidder
+        
         SecurityContextHolder.getContext().setAuthentication(
             new UsernamePasswordAuthenticationToken("test_bidder_user", null, Collections.emptyList())
         );
 
-        // 7. Pay order using OrderService
+        
         OrderResponseDTO paidOrderResponse = orderService.payOrder(orderId);
 
-        // Verify status is updated to PAID
+        
         assertEquals("PAID", paidOrderResponse.getPaymentStatus());
         assertEquals("test_bidder_user", paidOrderResponse.getWinnerUsername());
         assertEquals("test_seller_user", paidOrderResponse.getSellerUsername());
 
-        // 8. Retrieve orders as the seller and verify the PAID order is visible
+        
         List<OrderResponseDTO> sellerOrders = orderService.getOrdersBySellerUsername("test_seller_user");
         assertNotNull(sellerOrders);
         assertFalse(sellerOrders.isEmpty());

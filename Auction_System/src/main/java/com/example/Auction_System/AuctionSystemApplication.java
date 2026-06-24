@@ -6,10 +6,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableScheduling // <-- REQUIRED CRITICAL INPUT: This activates background @Scheduled execution tasks!
+@EnableScheduling 
 public class AuctionSystemApplication {
 	public static void main(String[] args) {
-		// Load local .env variables into System properties if not already set in OS
+		
 		try {
 			Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 			dotenv.entries().forEach(entry -> {
@@ -18,7 +18,7 @@ public class AuctionSystemApplication {
 				}
 			});
 		} catch (Exception e) {
-			// Silent fallback if .env is missing or malformed
+			
 		}
 		
 		SpringApplication.run(AuctionSystemApplication.class, args);

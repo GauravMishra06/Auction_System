@@ -15,7 +15,7 @@ public class DotenvContextInitializer implements ApplicationContextInitializer<C
                 }
             });
         } catch (Exception ignored) {
-            // ignore
+            
         }
     }
 }

@@ -8,10 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import lombok.Data;
 
-/**
- * Captures user input payload data coming from the React form when
- * an auctioneer lists an item.
- */
+
 @Data
 public class AuctionRequestDTO {
     @NotBlank(message = "Item name is required")
@@ -32,5 +29,5 @@ public class AuctionRequestDTO {
     private BigDecimal startPrice;
 
     @Min(value = 1, message = "Duration must be at least 1 minute")
-    private int durationInMinutes; // The service layer converts this to an explicit end timestamp
+    private int durationInMinutes; 
 }

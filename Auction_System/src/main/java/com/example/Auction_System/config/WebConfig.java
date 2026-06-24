@@ -9,7 +9,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Expose local directory './uploads/' as static files under '/uploads/**' URL path
+        
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:./uploads/");
     }

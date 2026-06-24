@@ -55,7 +55,7 @@ public class AuthService {
     public AuthResponse signUp(SignUpRequest request) {
         captchaService.verifyRecaptcha(request.getRecaptchaToken());
 
-        // Block self-assignment of ADMIN role during public sign-up
+        
         if (request.getRole() == Role.ROLE_ADMIN) {
             throw new BusinessRuleException("Admin accounts cannot be created through public registration.");
         }
@@ -139,7 +139,7 @@ public class AuthService {
         if (optionalUser.isPresent()) {
             String token = passwordResetService.createToken(optionalUser.get());
             String resetLink = passwordResetService.buildResetLink(token);
-            // In production, send this via email (JavaMailSender / SendGrid)
+            
             log.info("Password reset link generated for user '{}': {}", optionalUser.get().getUsername(), resetLink);
         }
 

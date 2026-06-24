@@ -35,18 +35,15 @@ public class AuctionService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * @Transactional protects transaction integrity. If saving the auction record errors out midway,
-     * the item entry rolls back automatically so you don't end up with broken/orphaned rows in SQL.
-     */
+    
     @Transactional
     public AuctionResponseDTO createAuction(AuctionRequestDTO request) {
-        // Extract seller identity from JWT token — never trust client-provided IDs
+        
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User seller = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Seller not found: " + currentUsername));
 
-        // Instantiate database model entity and assign text field context data points
+        
         Item item = new Item();
         item.setName(request.getItemName());
         item.setDescription(request.getItemDescription());
@@ -57,9 +54,9 @@ public class AuctionService {
         auction.setItem(item);
         auction.setSeller(seller);
         auction.setStartPrice(request.getStartPrice());
-        auction.setCurrentHighestBid(request.getStartPrice()); // Starting out, highest bid equals base minimum price
+        auction.setCurrentHighestBid(request.getStartPrice()); 
         auction.setStartTime(LocalDateTime.now());
-        // Calculate expiration endpoint by extending current timestamp with request context properties
+        
         auction.setEndTime(LocalDateTime.now().plusMinutes(request.getDurationInMinutes()));
         auction.setStatus(AuctionStatus.ACTIVE);
 
@@ -70,7 +67,7 @@ public class AuctionService {
 
     @Transactional(readOnly = true)
     public List<AuctionResponseDTO> getActiveAuctions() {
-        // Find by status and transform entity arrays into response payload vectors
+        
         return auctionRepository.findByStatus(AuctionStatus.ACTIVE).stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
@@ -132,7 +129,7 @@ public class AuctionService {
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + id));
 
-        // Only the seller or an admin can cancel
+        
         boolean isOwner = auction.getSeller().getUsername().equals(currentUsername);
         boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
@@ -151,9 +148,7 @@ public class AuctionService {
         return convertToResponseDTO(saved);
     }
 
-    /**
-     * Returns all auctions created by a specific seller (by username).
-     */
+    
     @Transactional(readOnly = true)
     public List<AuctionResponseDTO> getAuctionsBySeller(String username) {
         User seller = userRepository.findByUsername(username)
@@ -163,9 +158,7 @@ public class AuctionService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Extraction converter mapping complex relational records into flat, readable API models.
-     */
+    
     private AuctionResponseDTO convertToResponseDTO(Auction auction) {
         AuctionResponseDTO dto = new AuctionResponseDTO();
         dto.setAuctionId(auction.getId());

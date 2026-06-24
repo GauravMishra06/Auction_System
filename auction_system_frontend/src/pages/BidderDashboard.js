@@ -214,8 +214,7 @@ const BidderDashboard = () => {
             width: '95%',
             maxWidth: '500px',
             position: 'relative',
-            backgroundColor: 'var(--color-white)',
-            border: '1px solid var(--color-primary-light)'
+            color: 'var(--color-white)'
           }}>
             <button 
               onClick={handleCloseCheckout} 
@@ -227,11 +226,11 @@ const BidderDashboard = () => {
                 border: 'none',
                 fontSize: '1.5rem',
                 cursor: 'pointer',
-                color: 'var(--color-gray)',
+                color: 'var(--color-gray-light)',
                 transition: 'color 0.2s'
               }}
-              onMouseEnter={(e) => e.target.style.color = 'var(--color-dark)'}
-              onMouseLeave={(e) => e.target.style.color = 'var(--color-gray)'}
+              onMouseEnter={(e) => e.target.style.color = 'var(--color-white)'}
+              onMouseLeave={(e) => e.target.style.color = 'var(--color-gray-light)'}
             >
               &times;
             </button>
@@ -246,7 +245,7 @@ const BidderDashboard = () => {
             <div style={{ 
               marginBottom: '20px', 
               padding: '12px', 
-              backgroundColor: 'var(--color-gray-lightest)', 
+              backgroundColor: 'rgba(0, 0, 0, 0.3)', 
               borderRadius: 'var(--radius-sm)',
               borderLeft: '4px solid var(--color-primary)'
             }}>
@@ -258,7 +257,7 @@ const BidderDashboard = () => {
                 <span style={{ fontWeight: '600' }}>Lot ID:</span>
                 <span>#{selectedOrder.auctionId}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-success)', fontWeight: 'bold' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
                 <span>Amount Due:</span>
                 <span>${selectedOrder.finalPrice.toFixed(2)}</span>
               </div>

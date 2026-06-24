@@ -8,9 +8,7 @@ import com.example.Auction_System.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-/**
- * @Service registers this class as the home for core business logic operations.
- */
+
 @Service
 public class UserService {
 
@@ -23,7 +21,7 @@ public class UserService {
     }
 
     public UserDTO registerUser(User user) {
-        // Enforce business rules before updating the database
+        
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new BusinessRuleException("Username is already taken.");
         }

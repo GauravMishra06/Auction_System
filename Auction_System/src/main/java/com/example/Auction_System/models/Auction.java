@@ -19,17 +19,11 @@ public class Auction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Optimistic locking version field. Prevents concurrent bid race conditions
-     * by causing an OptimisticLockException if two transactions modify the same row simultaneously.
-     */
+    
     @Version
     private Long version;
 
-    /**
-     * Always specify BigDecimal for currency tracking computations.
-     * Using double or float will introduce rounding inaccuracies due to binary calculations.
-     */
+    
     @Column(name = "start_price", nullable = false)
     private BigDecimal startPrice;
 
@@ -46,18 +40,12 @@ public class Auction {
     @Column(nullable = false)
     private AuctionStatus status;
 
-    /**
-     * @ManyToOne states multiple auctions map back to one owner seller user.
-     * @JoinColumn sets up the foreign key name column label ('seller_id') inside the auctions table.
-     */
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
 
-    /**
-     * @OneToOne owner configuration side. CascadeType.ALL implies creating an auction listing automatically
-     * processes raw Item entity record saving simultaneously.
-     */
+    
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "item_id", referencedColumnName = "id", nullable = false)
     private Item item;

@@ -33,6 +33,6 @@ public class Bid {
 
     @PrePersist
     protected void onBid() {
-        this.bidTime = LocalDateTime.now(); // Automatically timestamps bid transaction entry arrival instance
+        this.bidTime = LocalDateTime.now(); 
     }
 }

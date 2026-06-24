@@ -5,10 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Clean transaction confirmation returned to the UI to update the
- * live bid history dashboard.
- */
+
 @Data
 public class BidResponseDTO {
         private Long bidId;
