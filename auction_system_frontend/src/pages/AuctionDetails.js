@@ -66,7 +66,7 @@ const AuctionDetails = () => {
   const { id } = useParams();
   const { auth, getAuthorizedHeaders } = useAuth();
   const [auction, setAuction] = useState(null);
-  const [bidHistory, setBidHistory] = useState([]);
+  const [bidHistory, setBidHistory] = useState(null);
   const [bidAmount, setBidAmount] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [statusType, setStatusType] = useState('error');
@@ -89,12 +89,12 @@ const AuctionDetails = () => {
   // Trigger appropriate animation when auction is COMPLETED
   useEffect(() => {
     if (auction?.status === 'COMPLETED' && !animationShownRef.current && bidHistory !== null) {
-      animationShownRef.current = true;
-
+      
       const hasBids = bidHistory.length > 0;
       const isCurrentUserWinner = hasBids && auth?.username && bidHistory[0]?.bidderUsername === auth.username;
 
       const timer = setTimeout(() => {
+        animationShownRef.current = true;
         if (!hasBids) {
           // No bids were placed — show UNSOLD animation
           setShowUnsold(true);
@@ -164,7 +164,7 @@ const AuctionDetails = () => {
         setStatusMessage('Bid placed successfully!');
         setStatusType('success');
         setAuction({ ...auction, currentHighestBid: response.data.bidAmount });
-        setBidHistory([response.data, ...bidHistory]);
+        setBidHistory([response.data, ...(bidHistory || [])]);
         setBidAmount('');
 
         // 🎉 Trigger celebration
@@ -192,7 +192,7 @@ const AuctionDetails = () => {
         show={showSold}
         onComplete={() => setShowSold(false)}
         finalPrice={auction.currentHighestBid}
-        winnerName={bidHistory.length > 0 ? bidHistory[0]?.bidderUsername : null}
+        winnerName={(bidHistory && bidHistory.length > 0) ? bidHistory[0]?.bidderUsername : null}
       />
 
       {/* UNSOLD Overlay — shown when auction closes with zero bids */}
@@ -235,7 +235,7 @@ const AuctionDetails = () => {
             {auction.status === 'COMPLETED' && (
               <div className="gallery-card-sold-overlay">
                 <div className="gallery-card-sold-stamp">
-                  {bidHistory.length > 0 ? 'SOLD' : 'UNSOLD'}
+                  {(bidHistory && bidHistory.length > 0) ? 'SOLD' : 'UNSOLD'}
                 </div>
               </div>
             )}
@@ -306,9 +306,9 @@ const AuctionDetails = () => {
       {/* Right Column: Bid History */}
       <div style={{ flex: 1, minWidth: '290px' }}>
         <div className="glass-card" style={{ height: '100%', boxSizing: 'border-box', borderTop: '2px solid var(--color-primary)' }}>
-          <h3 className="section-title" style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px', marginBottom: '16px' }}>Bidding History ({bidHistory.length})</h3>
-          <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-            {bidHistory.length === 0 ? (
+          <h3 className="section-title" style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px', marginBottom: '16px' }}>Bidding History ({bidHistory?.length || 0})</h3>
+          <div className="bid-history-list" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+            {(!bidHistory || bidHistory.length === 0) ? (
               <p style={{ color: 'var(--color-gray-light)', textAlign: 'center', padding: 'var(--space-xl) 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
                 No bids recorded. Be the first to place a bid.
               </p>

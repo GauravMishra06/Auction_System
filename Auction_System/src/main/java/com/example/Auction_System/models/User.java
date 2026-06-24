@@ -48,6 +48,9 @@ public class User {
     @OneToMany(mappedBy = "winner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Order> wonOrders;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<RefreshToken> refreshTokens;
+
     @PrePersist 
     protected void onCreate() {
         this.createdAt = LocalDateTime.now(); 
