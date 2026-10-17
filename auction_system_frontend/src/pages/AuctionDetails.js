@@ -6,62 +6,6 @@ import SoldAnimation from '../components/SoldAnimation';
 import UnsoldAnimation from '../components/UnsoldAnimation';
 import WinnerCelebration from '../components/WinnerCelebration';
 
-const CountdownTimer = ({ endTime, onExpired }) => {
-  const [timeLeft, setTimeLeft] = useState('');
-  const [isExpired, setIsExpired] = useState(false);
-
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const end = new Date(endTime).getTime();
-      const now = Date.now();
-      const diff = end - now;
-
-      if (diff <= 0) {
-        if (!isExpired) {
-          setIsExpired(true);
-          setTimeLeft('Auction Closed');
-          onExpired?.();
-        }
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      let parts = [];
-      if (days > 0) parts.push(`${days}d`);
-      parts.push(`${hours}h ${minutes}m ${seconds}s`);
-      setTimeLeft(parts.join(' '));
-    };
-
-    calculateTimeLeft();
-    const interval = setInterval(calculateTimeLeft, 1000);
-    return () => clearInterval(interval);
-  }, [endTime, isExpired, onExpired]);
-
-  return (
-    <div 
-      className={`glass-card ${isExpired ? '' : 'glass-card-dark'}`} 
-      style={{
-        padding: '16px 20px',
-        fontSize: '0.85rem',
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        textAlign: 'center',
-        letterSpacing: '0.15em',
-        marginBottom: 'var(--space-lg)',
-        background: isExpired ? 'var(--color-danger-light)' : 'var(--color-dark)',
-        color: isExpired ? 'var(--color-danger-dark)' : 'var(--color-primary)',
-        border: isExpired ? '1px solid var(--color-danger)' : '1px solid var(--color-primary)'
-      }}
-    >
-      {isExpired ? 'Auction Closed' : `Time Remaining: ${timeLeft}`}
-    </div>
-  );
-};
-
 const AuctionDetails = () => {
   const { id } = useParams();
   const { auth, getAuthorizedHeaders } = useAuth();
@@ -80,8 +24,8 @@ const AuctionDetails = () => {
   const animationShownRef = useRef(false);
 
   const loadData = useCallback(() => {
-    axios.get(`${API_BASE_URL}/api/auctions/${id}`).then(res => setAuction(res.data)).catch(() => {});
-    axios.get(`${API_BASE_URL}/api/bids/history/${id}`).then(res => setBidHistory(res.data)).catch(() => {});
+    axios.get(`${API_BASE_URL}/api/auctions/${id}`).then(res => setAuction(res.data)).catch(() => { });
+    axios.get(`${API_BASE_URL}/api/bids/history/${id}`).then(res => setBidHistory(res.data)).catch(() => { });
   }, [id]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -89,7 +33,7 @@ const AuctionDetails = () => {
   // Trigger appropriate animation when auction is COMPLETED
   useEffect(() => {
     if (auction?.status === 'COMPLETED' && !animationShownRef.current && bidHistory !== null) {
-      
+
       const hasBids = bidHistory.length > 0;
       const isCurrentUserWinner = hasBids && auth?.username && bidHistory[0]?.bidderUsername === auth.username;
 
@@ -110,29 +54,17 @@ const AuctionDetails = () => {
     }
   }, [auction?.status, bidHistory, auth?.username]);
 
-  // Called when countdown reaches zero (live transition to COMPLETED)
-  const handleAuctionExpired = useCallback(() => {
-    if (!animationShownRef.current) {
-      // Reload first to get final bid data, then trigger animation
-      loadData();
-      // The animation will be triggered by the useEffect above
-      // once the reloaded data sets auction.status to COMPLETED
-    }
-  }, [loadData]);
-
   const triggerBidCelebration = () => {
-    // 1. Flash effect
+
     setShowBidFlash(true);
     setTimeout(() => setShowBidFlash(false), 900);
 
-    // 2. Toast notification
     setShowBidToast(true);
     setTimeout(() => setShowBidToast(false), 3200);
 
-    // 3. Sparkle burst (from GoldenSparkles canvas)
     if (window.triggerSparkBurst) {
       window.triggerSparkBurst(window.innerWidth / 2, window.innerHeight / 2, 50);
-      // Extra bursts around the screen
+
       setTimeout(() => {
         window.triggerSparkBurst?.(window.innerWidth * 0.3, window.innerHeight * 0.4, 20);
         window.triggerSparkBurst?.(window.innerWidth * 0.7, window.innerHeight * 0.4, 20);
@@ -225,8 +157,8 @@ const AuctionDetails = () => {
       <div style={{ flex: 2, minWidth: '320px' }}>
         <h1 className="page-title" style={{ fontSize: '2.5rem', marginBottom: 'var(--space-md)' }}>{auction.itemName}</h1>
         <div className="breadcrumb" style={{ borderBottom: 'none', marginBottom: '1.5rem', paddingBottom: 0 }}>Lot #{auction.auctionId} / {auction.category}</div>
-        
-        <CountdownTimer endTime={auction.endTime} onExpired={handleAuctionExpired} />
+
+        –
 
         {auction.imageUrl && (
           <div className="glass-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 'var(--space-xl)', border: '1px solid var(--color-gray-lighter)', position: 'relative' }}>
